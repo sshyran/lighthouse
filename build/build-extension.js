@@ -10,22 +10,11 @@ const fs = require('fs');
 const archiver = require('archiver');
 const cpy = require('cpy');
 const makeDir = require('make-dir');
-const bundleBuilder = require('./build-bundle.js');
 
 const sourceDir = __dirname + '/../clients/extension';
 const distDir = __dirname + '/../dist/extension';
 
 const manifestVersion = require(`${sourceDir}/manifest.json`).version;
-
-/**
- * Inline the current commit hash in dist folder popup.js
- */
-function injectCommitHash() {
-  const popupPath = `${distDir}/scripts/popup.js`;
-  const modifiedSource = fs.readFileSync(popupPath, {encoding: 'utf8'})
-    .replace(/__COMMITHASH__/g, bundleBuilder.COMMIT_HASH);
-  fs.writeFileSync(popupPath, modifiedSource);
-}
 
 /**
  * @return {Promise<void>}
@@ -75,7 +64,6 @@ async function run() {
     return packageExtension();
   }
   await copyAssets();
-  injectCommitHash();
 }
 
 run();
