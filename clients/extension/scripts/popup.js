@@ -5,82 +5,17 @@
  */
 'use strict';
 
-/** @typedef {typeof import('./lighthouse-background-page.js') & {console: typeof console}} BackgroundPage */
 /** @typedef {import('../../../lighthouse-core/lib/lh-error.js')} LighthouseError */
 
-/**
- * Error strings that indicate a problem in how Lighthouse was run, not in
- * Lighthouse itself, mapped to more useful strings to report to the user.
- */
-const NON_BUG_ERROR_MESSAGES = {
-  'DNS_FAILURE': 'DNS servers could not resolve the provided domain.',
-  'INVALID_URL': 'Lighthouse can only audit URLs that start' +
-      ' with http:// or https://.',
+const VIEWER_ORIGIN = isDevMode() ? 'http://localhost:8000' : 'https://googlechrome.github.io';
+const VIEWER_PATH = isDevMode() ? '/' : '/lighthouse/viewer/';
 
-  // chrome extension API errors
-  'multiple tabs': 'You probably have multiple tabs open to the same origin. ' +
-      'Close the other tabs to use Lighthouse.',
-  // The extension debugger API is forbidden from attaching to the web store.
-  // @see https://chromium.googlesource.com/chromium/src/+/5d1f214db0f7996f3c17cd87093d439ce4c7f8f1/chrome/common/extensions/chrome_extensions_client.cc#232
-  'The extensions gallery cannot be scripted': 'The Lighthouse extension cannot audit the ' +
-      'Chrome Web Store. If necessary, use the Lighthouse CLI to do so.',
-  'Cannot access a chrome': 'The Lighthouse extension cannot audit ' +
-      'Chrome-specific urls. If necessary, use the Lighthouse CLI to do so.',
-  'Cannot access contents of the page': 'Lighthouse can only audit URLs that start' +
-      ' with http:// or https://.',
-};
-
-const PSI_KEY = 'AIzaSyAjcDRNN9CX9dCazhqI4lGR7yyQbkd_oYE';
-
-/** @typedef {{lighthouseResult: LH.Result}} PSIResponse */
-
-/**
- * @param {string} url
- * @return {Promise<PSIResponse>}
- */
-async function callPSI(url) {
-  const psiUrl = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
-  /** @type {Record<string, string | string[]>} */
-  const params = {
-    url,
-    category: [
-      'performance',
-      'accessibility',
-      'seo',
-      'best-practices',
-      'pwa',
-    ],
-    strategy: 'mobile',
-    utm_source: 'Lighthouse Chrome Extension',
-  };
-  Object.entries(params).forEach(([key, value]) => {
-    const values = Array.isArray(value) ? value : [value];
-    for (const singleValue of values) {
-      psiUrl.searchParams.append(key, singleValue);
-    }
-  });
-  const response = await fetch(psiUrl.href);
-  const json = await response.json();
-  return json;
+function isDevMode() {
+  return !('update_url' in chrome.runtime.getManifest());
 }
 
 /** @type {?string} */
 let siteURL = null;
-/** @type {boolean} */
-let isRunning = false;
-
-function getLighthouseVersion() {
-  return chrome.runtime.getManifest().version;
-}
-
-function getLighthouseCommitHash() {
-  return '__COMMITHASH__';
-}
-
-function getChromeVersion() {
-  // @ts-ignore
-  return /Chrome\/([0-9.]+)/.exec(navigator.userAgent)[1];
-}
 
 /**
  * Guaranteed context.querySelector. Always returns an element or throws if
@@ -99,75 +34,15 @@ function find(query, context = document) {
 }
 
 /**
- * @param {string} message
- * @param {Error} err
- * @return {HTMLButtonElement}
- */
-function buildErrorCopyButton(message, err) {
-  const issueBody = `
-**Lighthouse Version**: ${getLighthouseVersion()}
-**Lighthouse Commit**: ${getLighthouseCommitHash()}
-**Chrome Version**: ${getChromeVersion()}
-**Initial URL**: ${siteURL}
-**Error Message**: ${message}
-**Stack Trace**:
-\`\`\`
-${err.stack}
-\`\`\`
-    `;
-
-  const errorButtonDefaultText = 'Copy details to clipboard 📋';
-  const errorButtonEl = document.createElement('button');
-  errorButtonEl.className = 'button button--report-error';
-  errorButtonEl.textContent = errorButtonDefaultText;
-
-  errorButtonEl.addEventListener('click', async () => {
-    // @ts-ignore - tsc doesn't include `clipboard` on `navigator`
-    await navigator.clipboard.writeText(issueBody);
-    errorButtonEl.textContent = 'Copied to clipboard 📋';
-
-    // Return button to inviting state after timeout.
-    setTimeout(() => {
-      errorButtonEl.textContent = errorButtonDefaultText;
-    }, 1000);
-  });
-
-  return errorButtonEl;
-}
-
-/**
- * @param {[string, string, string]} status
- */
-function logStatus([, message, details]) {
-  if (typeof details === 'string' && details.length > 110) {
-    // Grab 100 characters and up to the next comma, ellipsis for the rest
-    const hundredPlusChars = details.replace(/(.{100}.*?),.*/, '$1…');
-    details = hundredPlusChars;
-  }
-  find('.status__msg').textContent = message;
-  const statusDetailsMessageEl = find('.status__detailsmsg');
-  statusDetailsMessageEl.textContent = details;
-}
-
-/**
  * Click event handler for Generate Report button.
- * @param {BackgroundPage} background
  * @param {string} siteURL
  */
-async function onGenerateReportButtonClick(background, siteURL) {
-  if (isRunning) {
-    return;
-  }
-  isRunning = true;
-
+async function onGenerateReportButtonClick(siteURL) {
   // resetting status message
   const statusMsg = find('.status__msg');
   statusMsg.textContent = 'Starting...';
 
-  const psiResponse = await callPSI(siteURL);
-  background.openTabAndSendJsonReport(psiResponse.lighthouseResult);
-
-  isRunning = false;
+  window.open(`${VIEWER_ORIGIN}${VIEWER_PATH}?url=${siteURL}`);
 }
 
 /**
@@ -184,20 +59,11 @@ async function initPopup() {
     find('header h2').textContent = siteURL ? new URL(siteURL).origin : '';
   });
 
-  const backgroundPagePromise = new Promise(resolve => chrome.runtime.getBackgroundPage(resolve));
-
-  /**
-   * Really the Window of the background page, but since we only want what's exposed
-   * on window in extension-entry.js, use its module API as the type.
-   * @type {BackgroundPage}
-   */
-  const background = await backgroundPagePromise;
-
   // bind Generate Report button
   const generateReportButton = find('#generate-report');
   generateReportButton.addEventListener('click', () => {
     if (siteURL) {
-      onGenerateReportButtonClick(background, siteURL);
+      onGenerateReportButtonClick(siteURL);
     }
   });
 }
