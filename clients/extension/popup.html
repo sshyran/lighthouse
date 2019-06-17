@@ -17,12 +17,16 @@ Unless required by applicable law or agreed to in writing, software distributed 
 <body>
 
   <header class="header">
-    <img src="images/lh_logo_bg.png" class="header__icon" width="100" height="100" alt="Lighthouse Logo">
+    <div class="lighthouse-effects">
+      <img src="images/lh_logo_bg_no-light.png" class="header__icon" width="100" height="100" alt="Lighthouse Logo">
+      <div class="lighthouse-effects__wrapper animate">
+        <div class="lighthouse-effects__light"></div>
+      </div>
+    </div>
     <div class="header-titles">
       <h1 class="header-titles__main">Lighthouse</h1>
       <h2 class="header-titles__url">...</h2>
     </div>
-    <div class="status__msg"></div>
   </header>
 
   <main class="main" role="main">

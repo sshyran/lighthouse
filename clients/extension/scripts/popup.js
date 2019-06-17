@@ -37,11 +37,7 @@ function find(query, context = document) {
  * Click event handler for Generate Report button.
  * @param {string} siteURL
  */
-async function onGenerateReportButtonClick(siteURL) {
-  // resetting status message
-  const statusMsg = find('.status__msg');
-  statusMsg.textContent = 'Starting...';
-
+function onGenerateReportButtonClick(siteURL) {
   window.open(`${VIEWER_ORIGIN}${VIEWER_PATH}?url=${siteURL}`);
 }
 

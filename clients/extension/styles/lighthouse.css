@@ -76,17 +76,6 @@ html, body {
   text-overflow: ellipsis;
 }
 
-.header-titles__throttling {
-  position: relative;
-  margin-top: 5px;
-  padding-left: 20px;
-}
-
-.header-titles__throttling input {
-  position: absolute;
-  left: 0;
-}
-
 .main {
   height: 70px;
   display: flex;
@@ -116,81 +105,6 @@ html, body {
   padding: 8px 16px 10px 16px;
   align-self: stretched;
   margin-left: auto;
-}
-
-.button--configure {
-  margin-right: auto;
-}
-
-.button--ok {
-  margin: 0 auto;
-}
-
-.button--report-error {
-  background-color: rgba(239, 83, 80, 0.81);
-  text-decoration: none;
-  padding: 3px 5px;
-  font-size: .8em;
-  text-align: center;
-  display: block;
-  margin-top: 5px;
-}
-
-.subpage {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: var(--lh-bg-color);
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  opacity: 0;
-  will-change: opacity;
-  transition: opacity 0.150s cubic-bezier(0,0,0.41,1);
-  text-align: center;
-  padding: 16px;
-}
-
-.subpage--visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.status {
-  align-items: center;
-  justify-content: flex-start;
-  background-color: #fff;
-}
-
-.subpage--visible.status .lighthouse-effects__wrapper {
-  animation-play-state: running;
-}
-
-.status__msg {
-  font-size: 16px;
-  margin-top: 16px;
-}
-
-.status__logo img {
-  height: 200px;
-  width: auto;
-}
-
-.feedback {
-  background-color: var(--lh-blue-color);
-  position: absolute;
-  color: #fff;
-  bottom: 10px;
-  left: 14px; /* 16px - 2px of shadow from the options button */
-  width: 180px;
-  line-height: 1.45;
-}
-
-.feedback-error {
-  font-size: .9em;
-  min-height: 38px;
 }
 
 /* 1. scrollbar when extension is too small */
