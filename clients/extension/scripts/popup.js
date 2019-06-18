@@ -51,12 +51,16 @@ async function initPopup() {
     }
 
     siteURL = tabs[0].url || null;
-    // Show the user what URL is going to be tested.
-    find('header h2').textContent = siteURL ? new URL(siteURL).origin : '';
+    const url = siteURL ? new URL(siteURL) : null;
+    const origin = url ? url.origin : '';
+    const host = url ? url.host : '';
+    find('header h2').textContent = origin;
+    if (host.startsWith('localhost')) {
+      generateReportButton.disabled = true;
+    }
   });
 
-  // bind Generate Report button
-  const generateReportButton = find('#generate-report');
+  const generateReportButton = /** @type {HTMLButtonElement} */ (find('#generate-report'));
   generateReportButton.addEventListener('click', () => {
     if (siteURL) {
       onGenerateReportButtonClick(siteURL);

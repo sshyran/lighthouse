@@ -99,6 +99,12 @@ html, body {
   padding: 7px 12px 5px 12px
 }
 
+.button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
 .button--generate {
   font-weight: 500;
   font-size: 16px;
