@@ -46,24 +46,10 @@ html, body {
   margin-right: 16px;
 }
 
-.header-titles {
-  display: flex;
-  flex-direction: column;
-  align-self: center;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.header-titles__main {
-  margin: 0;
-  font-family: 'Roboto', Arial, sans-serif;
-  color: currentColor;
-  font-weight: 300;
-  margin-bottom: 4px;
-}
-
 .header-titles__url {
+  position: absolute;
+  right: 0;
+  bottom: 0;
   margin: 0;
   font-size: 14px;
   opacity: 0.74;
@@ -74,15 +60,6 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.main {
-  height: 70px;
-  display: flex;
-  padding: 16px;
-  background-color: var(--lh-blue-color);
-  justify-content: space-around;
-  align-items: flex-end;
 }
 
 .button {
@@ -105,7 +82,33 @@ html, body {
   cursor: not-allowed;
 }
 
+.main {
+  padding: 16px;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+}
+
+.section {
+  place-self: center;
+}
+
+.section:first-child {
+  border-bottom: solid 1px lightgray;
+}
+
+.section--run {
+  display: flex;
+  position: relative;
+}
+
+.button--generate__wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .button--generate {
+  height: 40px;
   font-weight: 500;
   font-size: 16px;
   padding: 8px 16px 10px 16px;

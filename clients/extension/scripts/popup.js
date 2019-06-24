@@ -54,7 +54,7 @@ async function initPopup() {
     const url = siteURL ? new URL(siteURL) : null;
     const origin = url ? url.origin : '';
     const host = url ? url.host : '';
-    find('header h2').textContent = origin;
+    find('.header-titles__url').textContent = origin;
     if (host.startsWith('localhost')) {
       generateReportButton.disabled = true;
     }
