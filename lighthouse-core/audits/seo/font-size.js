@@ -117,13 +117,19 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
 
   if (styleDeclaration && styleDeclaration.range) {
     const url = styleDeclaration.stylesheet ? styleDeclaration.stylesheet.sourceURL : '';
+    // TODO when is this null ???
     let {startLine, startColumn} = styleDeclaration.range ? styleDeclaration.range : {startLine: 0, startColumn: 0};
 
-    // Inline elements need to add the startLine/startColumn of the <script> element to the ui location.
-    // If an inline stylesheet has a sourceURL magic comment, `hasSourceURL` is true and thus we'll be linking directly to that ui location.
+    // Inline elements need to add the startLine/startColumn of the <script> element to the ui location, so that the location
+    // is relevant to the HTML file the stylesheet is within.
+    // But, if an inline stylesheet has a sourceURL magic comment, `hasSourceURL` is true and thus `styleDeclaration.range` is sufficient.
     if (styleDeclaration.stylesheet && styleDeclaration.stylesheet.isInline && !styleDeclaration.stylesheet.hasSourceURL) {
       startLine += styleDeclaration.stylesheet.startLine;
-      startColumn += styleDeclaration.stylesheet.startColumn;
+      // The column the stylesheet begins on is only relevant if the rule is declared on the same line.
+      // `<div>...</div><style>.some-rule{}`
+      if (styleDeclaration.range && styleDeclaration.range.startLine === 0) {
+        startColumn += styleDeclaration.stylesheet.startColumn;
+      }
     }
 
     let selector = '';
@@ -132,9 +138,8 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
       selector = rule.selectors.map(item => item.text).join(', ');
     }
 
-    const snippet = `${selector} (line: ${startLine}, column: ${startColumn})`;
     return {
-      selector: {type: 'ui-location', snippet, url, line: startLine, column: startColumn},
+      selector: {type: 'ui-location', snippet: selector, url, line: startLine, column: startColumn},
       source: url,
     };
   }
@@ -218,7 +223,7 @@ class FontSize extends Audit {
     /** @type {LH.Audit.Details.Table['headings']} */
     const headings = [
       {key: 'source', itemType: 'url', text: 'Source'},
-      {key: 'selector', itemType: 'ui-location', text: 'Selector'},
+      {key: 'selector', itemType: 'code', text: 'Selector'},
       {key: 'coverage', itemType: 'text', text: '% of Page Text'},
       {key: 'fontSize', itemType: 'text', text: 'Font Size'},
     ];
