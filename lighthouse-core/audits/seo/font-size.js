@@ -248,26 +248,26 @@ class FontSize extends Audit {
       });
 
     // all failing nodes that were not fully analyzed will be displayed in a single row
-    // if (analyzedFailingTextLength < failingTextLength) {
-    //   const percentageOfUnanalyzedFailingText =
-    //     (failingTextLength - analyzedFailingTextLength) / visitedTextLength * 100;
+    if (analyzedFailingTextLength < failingTextLength) {
+      const percentageOfUnanalyzedFailingText =
+        (failingTextLength - analyzedFailingTextLength) / visitedTextLength * 100;
 
-    //   tableData.push({
-    //     source: 'Add\'l illegible text',
-    //     selector: '',
-    //     coverage: `${percentageOfUnanalyzedFailingText.toFixed(2)}%`,
-    //     fontSize: '< 12px',
-    //   });
-    // }
+      tableData.push({
+        source: {type: 'code', value: 'Add\'l illegible text'},
+        selector: '',
+        coverage: `${percentageOfUnanalyzedFailingText.toFixed(2)}%`,
+        fontSize: '< 12px',
+      });
+    }
 
-    // if (percentageOfPassingText > 0) {
-    //   tableData.push({
-    //     source: 'Legible text',
-    //     selector: '',
-    //     coverage: `${percentageOfPassingText.toFixed(2)}%`,
-    //     fontSize: '≥ 12px',
-    //   });
-    // }
+    if (percentageOfPassingText > 0) {
+      tableData.push({
+        source: {type:'code', value: 'Legible text'},
+        selector: '',
+        coverage: `${percentageOfPassingText.toFixed(2)}%`,
+        fontSize: '≥ 12px',
+      });
+    }
 
     const decimalProportion = (percentageOfPassingText / 100);
     const displayValue = str_(UIStrings.displayValue, {decimalProportion});

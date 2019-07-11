@@ -224,7 +224,7 @@ class ReportUIFeatures {
     /** @type {Array<HTMLTableElement>} */
     const tables = Array.from(this._document.querySelectorAll('.lh-table'));
     const tablesWithUrls = tables
-      .filter(el => el.querySelector('td.lh-table-column--url'))
+      .filter(el => el.querySelector('td.lh-table-column--url, td.lh-table-column--ui-location'))
       .filter(el => {
         const containingAudit = el.closest('.lh-audit');
         if (!containingAudit) throw new Error('.lh-table not within audit');
@@ -292,8 +292,13 @@ class ReportUIFeatures {
     for (const urlItem of urlItems) {
       const datasetUrl = urlItem.dataset.url;
       if (!datasetUrl) continue;
-      const isThirdParty = Util.getRootDomain(datasetUrl) !== finalUrlRootDomain;
-      if (!isThirdParty) continue;
+      try {
+        const isThirdParty = Util.getRootDomain(datasetUrl) !== finalUrlRootDomain;
+        if (!isThirdParty) continue;
+      } catch (err) {
+        // Invalid url (from sourceURL magic comment). Assume 1p.
+        continue;
+      }
 
       const urlRowEl = urlItem.closest('tr');
       if (urlRowEl) {
