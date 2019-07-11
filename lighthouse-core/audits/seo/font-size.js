@@ -104,19 +104,22 @@ function getSelector(node) {
  * @param {string} baseURL
  * @param {FailingNodeData['cssRule']} styleDeclaration
  * @param {FailingNodeData['node']} node
- * @returns {{source: string, selector: string | {type: 'ui-location', snippet: string, url: string, line: number, column: number}}}
+ * @returns {{source: string | {sourceURL: string, url: string, line: number, column: number}, selector: string}}
  */
 function findStyleRuleSource(baseURL, styleDeclaration, node) {
   if (styleDeclaration && styleDeclaration.parentRule &&
     styleDeclaration.parentRule.origin === 'user-agent') {
     return {
-      selector: styleDeclaration.parentRule.selectors.map(item => item.text).join(', '),
       source: 'User Agent Stylesheet',
+      selector: styleDeclaration.parentRule.selectors.map(item => item.text).join(', '),
     };
   }
 
   if (styleDeclaration && styleDeclaration.range) {
-    const url = styleDeclaration.stylesheet ? styleDeclaration.stylesheet.sourceURL : '';
+    // The magic comment sourceURL, if any. Used to resolve a url relative to the baseUrl.
+    // Note, URLs resolved from a magic comment aren't expected to _actually_ exist ...
+    const sourceURL = styleDeclaration.stylesheet ? styleDeclaration.stylesheet.sourceURL : '';
+    const url = new URL(sourceURL, baseURL).href;
     // TODO when is `styleDeclaration.range` null ???
     let {startLine, startColumn} = styleDeclaration.range ? styleDeclaration.range : {startLine: 0, startColumn: 0};
 
@@ -139,8 +142,8 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
     }
 
     return {
-      selector: {type: 'ui-location', snippet: selector, url, line: startLine, column: startColumn},
-      source: url,
+      source: {sourceURL, url, line: startLine, column: startColumn},
+      selector,
     };
   }
 
@@ -222,7 +225,7 @@ class FontSize extends Audit {
 
     /** @type {LH.Audit.Details.Table['headings']} */
     const headings = [
-      {key: 'source', itemType: 'url', text: 'Source'},
+      {key: 'source', itemType: 'ui-location', text: 'Source'},
       {key: 'selector', itemType: 'code', text: 'Selector'},
       {key: 'coverage', itemType: 'text', text: '% of Page Text'},
       {key: 'fontSize', itemType: 'text', text: 'Font Size'},
@@ -232,9 +235,12 @@ class FontSize extends Audit {
       .map(({cssRule, textLength, fontSize, node}) => {
         const percentageOfAffectedText = textLength / visitedTextLength * 100;
         const origin = findStyleRuleSource(pageUrl, cssRule, node);
+        const sourceData = typeof origin.source === 'string' ?
+          {type: 'code', value: origin.source} :
+          {type: 'ui-location', ...origin.source};
 
         return {
-          source: origin.source,
+          source: sourceData,
           selector: origin.selector,
           coverage: `${percentageOfAffectedText.toFixed(2)}%`,
           fontSize: `${fontSize}px`,

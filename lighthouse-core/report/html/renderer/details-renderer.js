@@ -385,37 +385,13 @@ class DetailsRenderer {
    * @protected
    */
   renderUILocation(item) {
-    const element = this._dom.createElement('span', 'lh-ui-location');
-    if (item.url && typeof item.line !== 'undefined' && typeof item.column !== 'undefined') {
-      const locationEl = this._dom.createElement('div');
-      locationEl.classList.add('lh-ui-location__location');
-
-      // `someFile.css:<line>:<column>`
-      let filename = '/';
-      try {
-        const pathname = new URL(item.url).pathname;
-        if (pathname !== '/') {
-          const pathComponents = new URL(item.url).pathname.split('/');
-          // TODO elide?
-          filename = pathComponents.length ? pathComponents[pathComponents.length - 1] : '/';
-        }
-      } catch (e) {
-        // Should only happen if sourceURL magic comment sets an invalid URL.
-        filename = item.url;
-      }
-      
-      locationEl.textContent = `${filename}:${item.line + 1}:${item.column}`; // TODO use source map
-      locationEl.setAttribute('data-url', item.url);
-      locationEl.setAttribute('data-line', String(item.line));
-      locationEl.setAttribute('data-column', String(item.column));
-      element.appendChild(locationEl);
-    }
-    if (item.snippet) {
-      const snippetEl = this._dom.createElement('div');
-      snippetEl.classList.add('lh-ui-location__snippet');
-      snippetEl.textContent = item.snippet;
-      element.appendChild(snippetEl);
-    }
+    // TODO use source map
+    const element = this.renderTextURL(`${item.url}:${item.line + 1}:${item.column}`);
+    element.classList.add('lh-ui-location__location');
+    // TODO: remove sourceURL. see comment on UILocationValue doc.
+    element.setAttribute('data-url', item.sourceURL || item.url);
+    element.setAttribute('data-line', String(item.line));
+    element.setAttribute('data-column', String(item.column));
     return element;
   }
 

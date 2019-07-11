@@ -169,11 +169,19 @@ declare global {
 
       export interface UILocationValue {
         type: 'ui-location';
+        /** TODO: remove `sourceURL`.
+         * It's only necessary for the case where a file has a magic sourceURL comment.
+         * Since `url` is made with the surrounding source file's URL as the base URL (new URL(sourceURL, baseURL).href),
+         * the url will be `http://localhost:8000/filenameFromSourceURLComment.css` instead of `filenameFromSourceURLComment.css`.
+         * When DevTools tries to linkify the former, it does so as if it's an actual URL and fails to link to the file in Sources.
+         * The latter works fine.
+         *
+         * Workaround: use `sourceURL` if defined for the data-url, else use `url`.
+        */
+        sourceURL: string;
         url: string;
         line: number;
         column: number;
-        /** A snippet used to identify the code. */
-        snippet?: string;
       }
 
       /**
