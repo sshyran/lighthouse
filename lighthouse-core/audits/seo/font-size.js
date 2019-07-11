@@ -117,7 +117,7 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
 
   if (styleDeclaration && styleDeclaration.range) {
     const url = styleDeclaration.stylesheet ? styleDeclaration.stylesheet.sourceURL : '';
-    // TODO when is this null ???
+    // TODO when is `styleDeclaration.range` null ???
     let {startLine, startColumn} = styleDeclaration.range ? styleDeclaration.range : {startLine: 0, startColumn: 0};
 
     // Inline elements need to add the startLine/startColumn of the <script> element to the ui location, so that the location
