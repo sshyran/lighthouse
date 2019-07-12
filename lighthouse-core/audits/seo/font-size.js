@@ -150,7 +150,7 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
 
   if (styleDeclaration.stylesheet && !styleDeclaration.stylesheet.sourceURL) {
     return {
-      source: {type: 'code', value: `${baseURL} (dynamic)`},
+      source: {type: 'code', value: 'dynamic'},
       selector,
     };
   }
