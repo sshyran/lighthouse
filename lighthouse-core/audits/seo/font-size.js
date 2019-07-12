@@ -62,12 +62,78 @@ function getUniqueFailingRules(fontSizeArtifact) {
 }
 
 /**
+ * @param {Array<string>=} attributes
+ * @returns {Map<string, string>}
+ */
+function getAttributeMap(attributes = []) {
+  const map = new Map();
+
+  for (let i = 0; i < attributes.length; i += 2) {
+    const name = attributes[i].toLowerCase();
+    const value = attributes[i + 1].trim();
+
+    if (value) {
+      map.set(name, value);
+    }
+  }
+
+  return map;
+}
+
+/**
+ * TODO: return unique selector, like axe-core does, instead of just id/class/name of a single node
+ * @param {FailingNodeData['node']} node
+ * @returns {string}
+ */
+function getSelector(node) {
+  const attributeMap = getAttributeMap(node.attributes);
+
+  if (attributeMap.has('id')) {
+    return '#' + attributeMap.get('id');
+  } else {
+    const attrClass = attributeMap.get('class');
+    if (attrClass) {
+      return '.' + attrClass.split(/\s+/).join('.');
+    }
+  }
+
+  return node.localName.toLowerCase();
+}
+
+/**
+ * @param {FailingNodeData['node']} node
+ * @return {{type: 'node', selector: string, snippet: string}}
+ */
+function nodeToTableNode(node) {
+  const attributes = node.attributes || [];
+  const attributesString = attributes.map((value, idx) =>
+    (idx % 2 === 0) ? ` ${value}` : `="${value}"`
+  ).join('');
+
+  return {
+    type: 'node',
+    selector: node.parentNode ? getSelector(node.parentNode) : '',
+    snippet: `<${node.localName}${attributesString}>`,
+  };
+}
+
+/**
  * @param {string} baseURL
  * @param {FailingNodeData['cssRule']} styleDeclaration
  * @param {FailingNodeData['node']} node
- * @returns {{source: string | {sourceURL: string, url: string, line: number, column: number}, selector: string}}
+ * @returns {{source: string | {sourceURL: string, url: string, line: number, column: number}, selector: string | {type: 'node', selector: string, snippet: string}}}
  */
 function findStyleRuleSource(baseURL, styleDeclaration, node) {
+  if (!styleDeclaration ||
+    styleDeclaration.type === 'Attributes' ||
+    styleDeclaration.type === 'Inline'
+  ) {
+    return {
+      source: baseURL,
+      selector: nodeToTableNode(node),
+    };
+  }
+
   if (styleDeclaration && styleDeclaration.parentRule &&
     styleDeclaration.parentRule.origin === 'user-agent') {
     return {
@@ -197,7 +263,7 @@ class FontSize extends Audit {
         const percentageOfAffectedText = textLength / visitedTextLength * 100;
         const origin = findStyleRuleSource(pageUrl, cssRule, node);
         const sourceData = typeof origin.source === 'string' ?
-          {type: 'code', value: origin.source} :
+          {type: 'url', value: origin.source} :
           {type: 'ui-location', ...origin.source};
 
         return {
@@ -223,7 +289,7 @@ class FontSize extends Audit {
 
     if (percentageOfPassingText > 0) {
       tableData.push({
-        source: {type:'code', value: 'Legible text'},
+        source: {type: 'code', value: 'Legible text'},
         selector: '',
         coverage: `${percentageOfPassingText.toFixed(2)}%`,
         fontSize: '≥ 12px',
