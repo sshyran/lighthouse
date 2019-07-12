@@ -121,7 +121,7 @@ function nodeToTableNode(node) {
  * @param {string} baseURL
  * @param {FailingNodeData['cssRule']} styleDeclaration
  * @param {FailingNodeData['node']} node
- * @returns {{source: string | {sourceURL: string, url: string, line: number, column: number}, selector: string | {type: 'node', selector: string, snippet: string}}}
+ * @returns {{source: {type: 'url', value: string} | {type: 'ui-location', sourceURL?: string, url: string, line: number, column: number} | {type: 'code', value: string}, selector: string | {type: 'node', selector: string, snippet: string}}}
  */
 function findStyleRuleSource(baseURL, styleDeclaration, node) {
   if (!styleDeclaration ||
@@ -129,20 +129,33 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
     styleDeclaration.type === 'Inline'
   ) {
     return {
-      source: baseURL,
+      source: {type: 'url', value: baseURL},
       selector: nodeToTableNode(node),
     };
   }
 
-  if (styleDeclaration && styleDeclaration.parentRule &&
+  if (styleDeclaration.parentRule &&
     styleDeclaration.parentRule.origin === 'user-agent') {
     return {
-      source: 'User Agent Stylesheet',
+      source: {type: 'code', value: 'User Agent Stylesheet'},
       selector: styleDeclaration.parentRule.selectors.map(item => item.text).join(', '),
     };
   }
 
-  if (styleDeclaration && styleDeclaration.range) {
+  let selector = '';
+  if (styleDeclaration.parentRule) {
+    const rule = styleDeclaration.parentRule;
+    selector = rule.selectors.map(item => item.text).join(', ');
+  }
+
+  if (styleDeclaration.stylesheet && !styleDeclaration.stylesheet.sourceURL) {
+    return {
+      source: {type: 'code', value: `${baseURL} (dynamic)`},
+      selector,
+    };
+  }
+
+  if (styleDeclaration.range) {
     // The magic comment sourceURL, if any. Used to resolve a url relative to the baseUrl.
     // Note, URLs resolved from a magic comment aren't expected to _actually_ exist ...
     const sourceURL = styleDeclaration.stylesheet ? styleDeclaration.stylesheet.sourceURL : '';
@@ -162,21 +175,16 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
       }
     }
 
-    let selector = '';
-    if (styleDeclaration.parentRule) {
-      const rule = styleDeclaration.parentRule;
-      selector = rule.selectors.map(item => item.text).join(', ');
-    }
-
+    const magicCommentSourceUrl = styleDeclaration.stylesheet && styleDeclaration.stylesheet.hasSourceURL ? sourceURL : undefined;
     return {
-      source: {sourceURL, url, line: startLine, column: startColumn},
+      source: {type: 'ui-location', sourceURL: magicCommentSourceUrl, url, line: startLine, column: startColumn},
       selector,
     };
   }
 
   return {
-    selector: '',
-    source: 'Unknown',
+    selector,
+    source: {type: 'code', value: 'Unknown'},
   };
 }
 
@@ -262,12 +270,9 @@ class FontSize extends Audit {
       .map(({cssRule, textLength, fontSize, node}) => {
         const percentageOfAffectedText = textLength / visitedTextLength * 100;
         const origin = findStyleRuleSource(pageUrl, cssRule, node);
-        const sourceData = typeof origin.source === 'string' ?
-          {type: 'url', value: origin.source} :
-          {type: 'ui-location', ...origin.source};
 
         return {
-          source: sourceData,
+          source: origin.source,
           selector: origin.selector,
           coverage: `${percentageOfAffectedText.toFixed(2)}%`,
           fontSize: `${fontSize}px`,
