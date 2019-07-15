@@ -156,17 +156,6 @@ class Driver {
   }
 
   /**
-   * @return {Promise<string>}
-   */
-  async getPageUserAgent() {
-    const status = {msg: 'Getting user agent', id: 'lh:gather:getPageUserAgent'};
-    log.time(status, 'verbose');
-    const ua = await this.evaluateAsync('navigator.userAgent', {useIsolation: true});
-    log.timeEnd(status);
-    return ua;
-  }
-
-  /**
    * Computes the ULTRADUMB™ benchmark index to get a rough estimate of device class.
    * @return {Promise<number>}
    */
@@ -1420,12 +1409,7 @@ class Driver {
    * @return {Promise<void>}
    */
   async beginEmulation(settings) {
-    if (settings.emulatedFormFactor === 'mobile') {
-      await emulation.enableNexus5X(this);
-    } else if (settings.emulatedFormFactor === 'desktop') {
-      await emulation.enableDesktop(this);
-    }
-
+    await emulation.emulate(this, settings);
     await this.setThrottling(settings, {useThrottling: true});
   }
 

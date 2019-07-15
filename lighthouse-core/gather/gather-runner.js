@@ -453,17 +453,15 @@ class GatherRunner {
    */
   static async initializeBaseArtifacts(options) {
     const hostUserAgent = (await options.driver.getBrowserVersion()).userAgent;
-    const pageUserAgent = await options.driver.getPageUserAgent();
-    const {emulatedFormFactor} = options.settings;
+    const {emulatedFormFactor, deviceScreenEmulationMethod} = options.settings;
 
     // Whether Lighthouse was run on a mobile device (i.e. not on a desktop machine).
     const IsMobileHost = hostUserAgent.includes('Android') || hostUserAgent.includes('Mobile');
-    // IsMobilePage indicates whether the page is mobile (including pre-applied mobile emulation)
-    // Why? In DevTools, emulation is applied before Lighthouse starts (to deal with viewport emulation bugs)
-    const IsMobilePage = pageUserAgent.includes('Android') || pageUserAgent.includes('Mobile');
-    const TestedAsMobileDevice = emulatedFormFactor === 'mobile' ||
-      (emulatedFormFactor !== 'desktop' && IsMobileHost) ||
-      (emulatedFormFactor === 'none' && IsMobilePage);
+
+    const TestedAsMobileDevice = (
+      (emulatedFormFactor === 'mobile' && deviceScreenEmulationMethod !== 'provided') ||
+      (emulatedFormFactor !== 'desktop' && IsMobileHost)
+    );
 
     return {
       fetchTime: (new Date()).toJSON(),

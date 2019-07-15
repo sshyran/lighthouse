@@ -63,32 +63,47 @@ const NO_CPU_THROTTLE_METRICS = {
 };
 
 /**
+ *
  * @param {Driver} driver
- * @return {Promise<void>}
+ * @param {LH.Config.Settings} settings
  */
-async function enableNexus5X(driver) {
-  await Promise.all([
-    driver.sendCommand('Emulation.setDeviceMetricsOverride', NEXUS5X_EMULATION_METRICS),
+async function emulate(driver, settings) {
+  let params;
+  if (settings.emulatedFormFactor === 'mobile') {
+    params = {
+      userAgent: NEXUS5X_USERAGENT,
+      metrics: NEXUS5X_EMULATION_METRICS,
+      touchEnabled: true,
+    };
+  } else if (settings.emulatedFormFactor === 'desktop') {
+    params = {
+      userAgent: DESKTOP_USERAGENT,
+      metrics: DESKTOP_EMULATION_METRICS,
+      touchEnabled: false,
+    };
+  } else {
+    return;
+  }
+
+  // In DevTools, emulation is applied before Lighthouse starts (to deal with viewport emulation bugs)
+  // As a result, we don't double-apply viewport emulation.
+  // UA emulation, however, is lost in the protocol handover from devtools frontend to the audits_worker. So it's always applied.
+  const promises = [
     // Network.enable must be called for UA overriding to work
     driver.sendCommand('Network.enable'),
-    driver.sendCommand('Network.setUserAgentOverride', {userAgent: NEXUS5X_USERAGENT}),
-    driver.sendCommand('Emulation.setTouchEmulationEnabled', {enabled: true}),
-  ]);
+    driver.sendCommand('Network.setUserAgentOverride', {userAgent: params.userAgent}),
+  ];
+  if (settings.deviceScreenEmulationMethod !== 'provided') {
+    promises.push(
+      ...[
+        driver.sendCommand('Emulation.setDeviceMetricsOverride', params.metrics),
+        driver.sendCommand('Emulation.setTouchEmulationEnabled', {enabled: params.touchEnabled}),
+      ]
+    );
+  }
+  await Promise.all(promises);
 }
 
-/**
- * @param {Driver} driver
- * @return {Promise<void>}
- */
-async function enableDesktop(driver) {
-  await Promise.all([
-    driver.sendCommand('Emulation.setDeviceMetricsOverride', DESKTOP_EMULATION_METRICS),
-    // Network.enable must be called for UA overriding to work
-    driver.sendCommand('Network.enable'),
-    driver.sendCommand('Network.setUserAgentOverride', {userAgent: DESKTOP_USERAGENT}),
-    driver.sendCommand('Emulation.setTouchEmulationEnabled', {enabled: false}),
-  ]);
-}
 
 /**
  * @param {Driver} driver
@@ -145,8 +160,7 @@ function disableCPUThrottling(driver) {
 }
 
 module.exports = {
-  enableNexus5X,
-  enableDesktop,
+  emulate,
   enableNetworkThrottling,
   clearAllNetworkEmulation,
   enableCPUThrottling,
