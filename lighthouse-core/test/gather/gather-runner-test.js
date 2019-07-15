@@ -400,6 +400,7 @@ describe('GatherRunner', function() {
       endTrace: asyncFunc,
       endDevtoolsLog: () => [],
       getBrowserVersion: async () => ({userAgent: ''}),
+      getPageUserAgent: async () => ({userAgent: ''}),
       getScrollPosition: async () => 1,
       scrollTo: async () => {},
     };

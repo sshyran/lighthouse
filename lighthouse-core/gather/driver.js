@@ -156,6 +156,17 @@ class Driver {
   }
 
   /**
+   * @return {Promise<string>}
+   */
+  async getPageUserAgent() {
+    const status = {msg: 'Getting user agent', id: 'lh:gather:getPageUserAgent'};
+    log.time(status, 'verbose');
+    const ua = await this.evaluateAsync('navigator.userAgent', {useIsolation: true});
+    log.timeEnd(status);
+    return ua;
+  }
+
+  /**
    * Computes the ULTRADUMB™ benchmark index to get a rough estimate of device class.
    * @return {Promise<number>}
    */

@@ -12,6 +12,9 @@ function makeFakeDriver({protocolGetVersionResponse}) {
     getBrowserVersion() {
       return Promise.resolve(Object.assign({}, protocolGetVersionResponse, {milestone: 71}));
     },
+    getPageUserAgent() {
+      return Promise.resolve(protocolGetVersionResponse.userAgent);
+    },
     getBenchmarkIndex() {
       return Promise.resolve(125.2);
     },
