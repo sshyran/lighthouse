@@ -38,7 +38,6 @@ class TestGathererNoArtifact extends Gatherer {
 
 const fakeDriver = require('./fake-driver.js');
 const fakeDriverUsingRealMobileDevice = fakeDriver.fakeDriverUsingRealMobileDevice;
-const fakeDriverUsingExternalMobileEmulation = fakeDriver.fakeDriverUsingExternalMobileEmulation;
 
 function getMockedEmulationDriver(emulationFn, netThrottleFn, cpuThrottleFn,
   blockUrlFn, extraHeadersFn) {
@@ -235,10 +234,10 @@ describe('GatherRunner', function() {
     });
 
     it('works when running via DevTools with emulation applied outside of LH', async () => {
-      const driver = fakeDriverUsingExternalMobileEmulation;
+      const driver = fakeDriver;
       const config = new Config({
         passes: [],
-        settings: {emulatedFormFactor: 'none'},
+        settings: {emulatedFormFactor: 'mobile', deviceScreenEmulationMethod: 'provided'},
       });
       const options = {requestedUrl, driver, settings: config.settings};
 
