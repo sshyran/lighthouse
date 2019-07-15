@@ -5,7 +5,7 @@
  */
 'use strict';
 
-function makeFakeDriver({protocolGetVersionResponse}) {
+function makeFakeDriver({protocolGetVersionResponse, driverGetPageUAResponse}) {
   let scrollPosition = {x: 0, y: 0};
 
   return {
@@ -13,7 +13,7 @@ function makeFakeDriver({protocolGetVersionResponse}) {
       return Promise.resolve(Object.assign({}, protocolGetVersionResponse, {milestone: 71}));
     },
     getPageUserAgent() {
-      return Promise.resolve(protocolGetVersionResponse.userAgent);
+      return Promise.resolve(driverGetPageUAResponse);
     },
     getBenchmarkIndex() {
       return Promise.resolve(125.2);
@@ -93,25 +93,33 @@ function makeFakeDriver({protocolGetVersionResponse}) {
   };
 }
 
+const desktopUA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3577.0 Safari/537.36';
+const mobileUA = 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5 Build/MRA58N) AppleWebKit/537.36(KHTML, like Gecko) Chrome/69.0.3464.0 Mobile Safari/537.36';
+
 // https://chromedevtools.github.io/devtools-protocol/tot/Browser#method-getVersion
 const protocolGetVersionResponse = {
   protocolVersion: '1.3',
   product: 'Chrome/71.0.3577.0',
   revision: '@fc334a55a70eec12fc77853c53979f81e8496c21',
-  // eslint-disable-next-line max-len
-  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3577.0 Safari/537.36',
+  userAgent: desktopUA,
   jsVersion: '7.1.314',
 };
-const fakeDriver = makeFakeDriver({protocolGetVersionResponse});
+const fakeDriver = makeFakeDriver({protocolGetVersionResponse, driverGetPageUAResponse: desktopUA});
 
 const fakeDriverUsingRealMobileDevice = makeFakeDriver({
   protocolGetVersionResponse: {
     ...protocolGetVersionResponse,
-    // eslint-disable-next-line max-len
-    userAgent: 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5 Build/MRA58N) AppleWebKit/537.36(KHTML, like Gecko) Chrome/69.0.3464.0 Mobile Safari/537.36',
+    userAgent: mobileUA,
   },
+  driverGetPageUAResponse: mobileUA,
+});
+
+const fakeDriverUsingExternalMobileEmulation = makeFakeDriver({
+  protocolGetVersionResponse,
+  driverGetPageUAResponse: mobileUA,
 });
 
 module.exports = fakeDriver;
 module.exports.fakeDriverUsingRealMobileDevice = fakeDriverUsingRealMobileDevice;
+module.exports.fakeDriverUsingExternalMobileEmulation = fakeDriverUsingExternalMobileEmulation;
 module.exports.protocolGetVersionResponse = protocolGetVersionResponse;

@@ -38,6 +38,7 @@ class TestGathererNoArtifact extends Gatherer {
 
 const fakeDriver = require('./fake-driver.js');
 const fakeDriverUsingRealMobileDevice = fakeDriver.fakeDriverUsingRealMobileDevice;
+const fakeDriverUsingExternalMobileEmulation = fakeDriver.fakeDriverUsingExternalMobileEmulation;
 
 function getMockedEmulationDriver(emulationFn, netThrottleFn, cpuThrottleFn,
   blockUrlFn, extraHeadersFn) {
@@ -232,6 +233,18 @@ describe('GatherRunner', function() {
       const results = await GatherRunner.run(config.passes, options);
       expect(results.TestedAsMobileDevice).toBe(false);
     });
+
+    it('works when running via DevTools with emulation applied outside of LH', async () => {
+      const driver = fakeDriverUsingExternalMobileEmulation;
+      const config = new Config({
+        passes: [],
+        settings: {emulatedFormFactor: 'none'},
+      });
+      const options = {requestedUrl, driver, settings: config.settings};
+
+      const results = await GatherRunner.run(config.passes, options);
+      expect(results.TestedAsMobileDevice).toBe(true);
+    });
   });
 
   it('sets up the driver to begin emulation when all emulation flags are undefined', () => {
@@ -400,7 +413,7 @@ describe('GatherRunner', function() {
       endTrace: asyncFunc,
       endDevtoolsLog: () => [],
       getBrowserVersion: async () => ({userAgent: ''}),
-      getPageUserAgent: async () => ({userAgent: ''}),
+      getPageUserAgent: async () => '',
       getScrollPosition: async () => 1,
       scrollTo: async () => {},
     };
