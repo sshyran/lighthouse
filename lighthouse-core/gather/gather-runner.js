@@ -458,9 +458,8 @@ class GatherRunner {
 
     // Whether Lighthouse was run on a mobile device (i.e. not on a desktop machine).
     const IsMobileHost = hostUserAgent.includes('Android') || hostUserAgent.includes('Mobile');
-    // IsMobilePage indicates whether the page is mobile (with any pre-applied mobile emulation or not)
-    // In DevTools, emulation is applied before Lighthouse starts (to deal with viewport emulation bugs)
-    // emulatedFormFactor will be 'none', but it's certainly still TestedAsMobileDevice
+    // IsMobilePage indicates whether the page is mobile (including pre-applied mobile emulation)
+    // Why? In DevTools, emulation is applied before Lighthouse starts (to deal with viewport emulation bugs)
     const IsMobilePage = pageUserAgent.includes('Android') || pageUserAgent.includes('Mobile');
     const TestedAsMobileDevice = emulatedFormFactor === 'mobile' ||
       (emulatedFormFactor !== 'desktop' && IsMobileHost) ||
