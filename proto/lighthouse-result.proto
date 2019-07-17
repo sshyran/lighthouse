@@ -147,10 +147,10 @@ message LighthouseResult {
 
     // The possible form factors an audit can be run in
     enum DeviceScreenEmulationMethod {
-      // Unknown screen emulation method.  This should not be used
+      // Unknown screen emulation method. This should not be used.
       UNKNOWN_SCREEN_EMULATION_METHOD = 0;
 
-      // DevTools mobile/desktop viewport emulation shoudl be applied.
+      // DevTools mobile/desktop viewport emulation should be applied.
       devtools = 1;
 
       // Mobile viewport emulation was already applied outside of Lighthouse

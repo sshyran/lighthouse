@@ -62,46 +62,41 @@ const NO_CPU_THROTTLE_METRICS = {
   rate: 1,
 };
 
+const emulationParams = {
+  mobile:   {
+      userAgent: NEXUS5X_USERAGENT,
+      metrics: NEXUS5X_EMULATION_METRICS,
+      touchEnabled: true,
+    },
+    desktop: {
+        userAgent: DESKTOP_USERAGENT,
+        metrics: DESKTOP_EMULATION_METRICS,
+        touchEnabled: false,
+    }
+};
+
 /**
  *
  * @param {Driver} driver
  * @param {LH.Config.Settings} settings
+ * @return {Promise<void>}
  */
 async function emulate(driver, settings) {
-  let params;
-  if (settings.emulatedFormFactor === 'mobile') {
-    params = {
-      userAgent: NEXUS5X_USERAGENT,
-      metrics: NEXUS5X_EMULATION_METRICS,
-      touchEnabled: true,
-    };
-  } else if (settings.emulatedFormFactor === 'desktop') {
-    params = {
-      userAgent: DESKTOP_USERAGENT,
-      metrics: DESKTOP_EMULATION_METRICS,
-      touchEnabled: false,
-    };
-  } else {
-    return;
-  }
+  if (!settings.emulatedFormFactor || settings.emulatedFormFactor === 'none') return;
+  const params = emulationParams[settings.emulatedFormFactor];
 
   // In DevTools, emulation is applied before Lighthouse starts (to deal with viewport emulation bugs)
   // As a result, we don't double-apply viewport emulation.
   // UA emulation, however, is lost in the protocol handover from devtools frontend to the audits_worker. So it's always applied.
-  const promises = [
+
     // Network.enable must be called for UA overriding to work
-    driver.sendCommand('Network.enable'),
-    driver.sendCommand('Network.setUserAgentOverride', {userAgent: params.userAgent}),
-  ];
-  if (settings.deviceScreenEmulationMethod !== 'provided') {
-    promises.push(
-      ...[
-        driver.sendCommand('Emulation.setDeviceMetricsOverride', params.metrics),
-        driver.sendCommand('Emulation.setTouchEmulationEnabled', {enabled: params.touchEnabled}),
-      ]
-    );
+  await driver.sendCommand('Network.enable');
+  await driver.sendCommand('Network.setUserAgentOverride', {userAgent: params.userAgent});
+
+  if (settings.deviceScreenEmulationMethod === 'devtools') {
+    await driver.sendCommand('Emulation.setDeviceMetricsOverride', params.metrics);
+    await driver.sendCommand('Emulation.setTouchEmulationEnabled', {enabled: params.touchEnabled});
   }
-  await Promise.all(promises);
 }
 
 
