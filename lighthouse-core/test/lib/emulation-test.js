@@ -16,7 +16,7 @@ describe('emulation', () => {
     const setUAFn = jest.fn();
     const driver = getMockedEmulationDriver(deviceMetricsFn, null, null, null, null, setUAFn);
 
-    const getFnCallArgs = fn => fn.mock.calls[0];
+    const getFnCallArg = fn => fn.mock.calls[0][0];
     const getSettings = (formFactor, screenEmulationMethod) => ({
       emulatedFormFactor: formFactor,
       deviceScreenEmulationMethod: screenEmulationMethod,
@@ -28,43 +28,61 @@ describe('emulation', () => {
     });
 
     it('handles: emulatedFormFactor: mobile / deviceScreenEmulationMethod: devtools', async () => {
-      await emulation.emulate(driver, getSettings('mobile', 'devtools'));
+      await emulation.emulate(driver, {
+        emulatedFormFactor: 'mobile',
+        deviceScreenEmulationMethod: 'devtools'
+      });
       expect(setUAFn).toBeCalled();
       expect(deviceMetricsFn).toBeCalled();
-      expect(getFnCallArgs(setUAFn)[0]).toMatchObject({userAgent: emulation.MOBILE_USERAGENT});
-      expect(getFnCallArgs(deviceMetricsFn)[0]).toMatchObject({mobile: true});
+      expect(getFnCallArg(setUAFn)).toMatchObject({userAgent: emulation.MOBILE_USERAGENT});
+      expect(getFnCallArg(deviceMetricsFn)).toMatchObject({mobile: true});
     });
 
     it('handles: emulatedFormFactor: desktop / deviceScreenEmulationMethod: devtools', async () => {
-      await emulation.emulate(driver, getSettings('desktop', 'devtools'));
+      await emulation.emulate(driver, {
+        emulatedFormFactor: 'desktop',
+        deviceScreenEmulationMethod: 'devtools'
+      });
       expect(setUAFn).toBeCalled();
       expect(deviceMetricsFn).toBeCalled();
-      expect(getFnCallArgs(setUAFn)[0]).toMatchObject({userAgent: emulation.DESKTOP_USERAGENT});
-      expect(getFnCallArgs(deviceMetricsFn)[0]).toMatchObject({mobile: false});
+      expect(getFnCallArg(setUAFn)).toMatchObject({userAgent: emulation.DESKTOP_USERAGENT});
+      expect(getFnCallArg(deviceMetricsFn)).toMatchObject({mobile: false});
     });
 
     it('handles: emulatedFormFactor: none / deviceScreenEmulationMethod: devtools', async () => {
-      await emulation.emulate(driver, getSettings('none', 'devtools'));
+      await emulation.emulate(driver, {
+        emulatedFormFactor: 'none',
+        deviceScreenEmulationMethod: 'devtools'
+      });
       expect(setUAFn).not.toBeCalled();
       expect(deviceMetricsFn).not.toBeCalled();
     });
 
     it('handles: emulatedFormFactor: mobile / deviceScreenEmulationMethod: provided', async () => {
-      await emulation.emulate(driver, getSettings('mobile', 'provided'));
+      await emulation.emulate(driver, {
+        emulatedFormFactor: 'mobile',
+        deviceScreenEmulationMethod: 'provided'
+      });
       expect(setUAFn).toBeCalled();
       expect(deviceMetricsFn).not.toBeCalled();
-      expect(getFnCallArgs(setUAFn)[0]).toMatchObject({userAgent: emulation.MOBILE_USERAGENT});
+      expect(getFnCallArg(setUAFn)).toMatchObject({userAgent: emulation.MOBILE_USERAGENT});
     });
 
     it('handles: emulatedFormFactor: desktop / deviceScreenEmulationMethod: provided', async () => {
-      await emulation.emulate(driver, getSettings('desktop', 'provided'));
+      await emulation.emulate(driver, {
+        emulatedFormFactor: 'desktop',
+        deviceScreenEmulationMethod: 'provided'
+      });
       expect(setUAFn).toBeCalled();
       expect(deviceMetricsFn).not.toBeCalled();
-      expect(getFnCallArgs(setUAFn)[0]).toMatchObject({userAgent: emulation.DESKTOP_USERAGENT});
+      expect(getFnCallArg(setUAFn)).toMatchObject({userAgent: emulation.DESKTOP_USERAGENT});
     });
 
     it('handles: emulatedFormFactor: none / deviceScreenEmulationMethod: provided', async () => {
-      await emulation.emulate(driver, getSettings('none', 'provided'));
+      await emulation.emulate(driver, {
+        emulatedFormFactor: 'none',
+        deviceScreenEmulationMethod: 'provided'
+      });
       expect(setUAFn).not.toBeCalled();
       expect(deviceMetricsFn).not.toBeCalled();
     });
