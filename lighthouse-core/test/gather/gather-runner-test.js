@@ -258,7 +258,7 @@ describe('GatherRunner', function() {
     return GatherRunner.setupDriver(driver, {
       settings: {
         emulatedFormFactor: 'mobile',
-        deviceScreenEmulationMethod: 'devtools'
+        deviceScreenEmulationMethod: 'devtools',
       },
     }).then(_ => {
       assert.ok(tests.calledDeviceEmulation, 'did not call device emulation');

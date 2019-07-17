@@ -6,7 +6,7 @@
 'use strict';
 
 const emulation = require('../../lib/emulation.js');
-const {getMockedEmulationDriver} = require('../gather/gather-runner-test');
+const {getMockedEmulationDriver} = require('../gather/gather-runner-test.js');
 
 /* eslint-env jest */
 
@@ -49,21 +49,21 @@ describe('emulation', () => {
       expect(deviceMetricsFn).not.toBeCalled();
     });
 
-    it('handles: emulatedFormFactor: mobile / deviceScreenEmulationMethod: provided ', async () => {
+    it('handles: emulatedFormFactor: mobile / deviceScreenEmulationMethod: provided', async () => {
       await emulation.emulate(driver, getSettings('mobile', 'provided'));
       expect(setUAFn).toBeCalled();
       expect(deviceMetricsFn).not.toBeCalled();
       expect(getFnCallArgs(setUAFn)[0]).toMatchObject({userAgent: emulation.MOBILE_USERAGENT});
     });
 
-    it('handles: emulatedFormFactor: desktop / deviceScreenEmulationMethod: provided ', async () => {
+    it('handles: emulatedFormFactor: desktop / deviceScreenEmulationMethod: provided', async () => {
       await emulation.emulate(driver, getSettings('desktop', 'provided'));
       expect(setUAFn).toBeCalled();
       expect(deviceMetricsFn).not.toBeCalled();
       expect(getFnCallArgs(setUAFn)[0]).toMatchObject({userAgent: emulation.DESKTOP_USERAGENT});
     });
 
-    it('handles: emulatedFormFactor: none / deviceScreenEmulationMethod: provided ', async () => {
+    it('handles: emulatedFormFactor: none / deviceScreenEmulationMethod: provided', async () => {
       await emulation.emulate(driver, getSettings('none', 'provided'));
       expect(setUAFn).not.toBeCalled();
       expect(deviceMetricsFn).not.toBeCalled();

@@ -63,16 +63,16 @@ const NO_CPU_THROTTLE_METRICS = {
 };
 
 const emulationParams = {
-  mobile:   {
-      userAgent: NEXUS5X_USERAGENT,
-      metrics: NEXUS5X_EMULATION_METRICS,
-      touchEnabled: true,
-    },
-    desktop: {
-        userAgent: DESKTOP_USERAGENT,
-        metrics: DESKTOP_EMULATION_METRICS,
-        touchEnabled: false,
-    }
+  mobile: {
+    userAgent: NEXUS5X_USERAGENT,
+    metrics: NEXUS5X_EMULATION_METRICS,
+    touchEnabled: true,
+  },
+  desktop: {
+    userAgent: DESKTOP_USERAGENT,
+    metrics: DESKTOP_EMULATION_METRICS,
+    touchEnabled: false,
+  },
 };
 
 /**
@@ -89,7 +89,7 @@ async function emulate(driver, settings) {
   // As a result, we don't double-apply viewport emulation.
   // UA emulation, however, is lost in the protocol handover from devtools frontend to the audits_worker. So it's always applied.
 
-    // Network.enable must be called for UA overriding to work
+  // Network.enable must be called for UA overriding to work
   await driver.sendCommand('Network.enable');
   await driver.sendCommand('Network.setUserAgentOverride', {userAgent: params.userAgent});
 
