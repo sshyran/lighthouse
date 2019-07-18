@@ -137,9 +137,10 @@ describe('SEO: Font size audit', () => {
     expect(auditResult.displayValue).toBeDisplayString('0% legible text');
   });
 
-  it.only('attributes source location', async () => {
+  it('attributes source location', async () => {
     // From external stylesheet.
     const style1 = {
+      styleSheetId: 1,
       stylesheet: {
         sourceURL: 'http://www.example.com/styles-1.css',
       },
@@ -151,6 +152,7 @@ describe('SEO: Font size audit', () => {
     };
     // From inline <style>. No magic comment sourceURL.
     const style2 = {
+      styleSheetId: 2,
       stylesheet: {
         sourceURL: 'http://www.example.com',
         isInline: true,
@@ -165,6 +167,7 @@ describe('SEO: Font size audit', () => {
     };
     // From inline <style>. No magic comment sourceURL. Rule on the same line as <style>.
     const style3 = {
+      styleSheetId: 3,
       stylesheet: {
         sourceURL: 'http://www.example.com',
         isInline: true,
@@ -179,6 +182,7 @@ describe('SEO: Font size audit', () => {
     };
     // From inline <style>. Magic comment sourceURL.
     const style4 = {
+      styleSheetId: 4,
       stylesheet: {
         sourceURL: 'something-magical.css',
         isInline: true,
@@ -193,25 +197,21 @@ describe('SEO: Font size audit', () => {
       },
     };
     const artifacts = {
-      URL: 'http://www.example.com',
+      URL: {finalUrl: 'http://www.example.com'},
       MetaElements: makeMetaElements(validViewport),
       FontSize: {
-        // totalTextLength: 7,
-        // visitedTextLength: 7,
-        // failingTextLength: 7,
-        // analyzedFailingTextLength: 7,
         analyzedFailingNodesData: [
           {textLength: 4, fontSize: 1, node: {nodeId: 1}, cssRule: style1},
           {textLength: 3, fontSize: 1, node: {nodeId: 2}, cssRule: style2},
           {textLength: 2, fontSize: 1, node: {nodeId: 3}, cssRule: style3},
-          // {textLength: 1, fontSize: 1, node: {nodeId: 4}, cssRule: style4},
+          {textLength: 1, fontSize: 1, node: {nodeId: 4}, cssRule: style4},
         ],
       },
       TestedAsMobileDevice: true,
     };
     const auditResult = await FontSizeAudit.audit(artifacts, getFakeContext());
 
-    assert.equal(auditResult.details.items.length, 3);
+    assert.equal(auditResult.details.items.length, 4);
     assert.deepEqual(auditResult.details.items[0].source, {
       type: 'source-location',
       url: 'http://www.example.com/styles-1.css',
@@ -233,13 +233,13 @@ describe('SEO: Font size audit', () => {
       line: 5,
       column: 15,
     });
-    // assert.deepEqual(auditResult.details.items[3].source, {
-    //   type: 'source-location',
-    //   url: 'http://www.example.com/something-magical.css',
-    //   sourceURL: 'something-magical.css',
-    //   line: 16,
-    //   column: 10,
-    // });
+    assert.deepEqual(auditResult.details.items[3].source, {
+      type: 'source-location',
+      url: 'http://www.example.com/something-magical.css',
+      sourceURL: 'something-magical.css',
+      line: 10,
+      column: 10,
+    });
   });
 
   it('adds a category for failing text that wasn\'t analyzed', async () => {
