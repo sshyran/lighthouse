@@ -390,7 +390,7 @@ class DetailsRenderer {
       element = this.renderTextURL(item.url);
       this._dom.find('a', element).textContent += `:${item.line + 1}:${item.column}`;
     } else {
-      element = this._renderText(`${item.url}:${item.line + 1}:${item.column}`);
+      element = this._renderText(`${item.url}:${item.line + 1}:${item.column} (from sourceURL)`);
     }
 
     element.classList.add('lh-source-location__location');
