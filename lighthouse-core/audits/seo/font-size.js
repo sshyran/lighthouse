@@ -159,14 +159,9 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
   if (styleDeclaration.stylesheet && styleDeclaration.range) {
     const {range, stylesheet} = styleDeclaration;
 
-    // If a magic sourceURL comment is present, it is typically as a URL relative to the
-    // source file URL. However, the DevTools protocol offers no way to get the true
-    // source file URL if a magic comment is present - it's usually found at
-    // stylesheet.sourceURL ... except if there's a magic comment, then sourceURL is the
-    // raw text from the comment. So there's no way to generate the resolved url
-    // via new URL(magic text, source file url).href.
-    // Besides, even if we could resolve the URL, it wouldn't exist and we shouldn't
-    // display this as an anchor.
+    // DevTools protocol does not provide the resource URL if there is a magic `sourceURL` comment.
+    // `sourceURL` will be the raw value of the magic `sourceURL` comment, which likely refers to
+    // a file at build time, not one that is served over the network that we could link to. 
     const urlIsNetworkResource = !stylesheet.hasSourceURL;
 
     let line = range.startLine;
