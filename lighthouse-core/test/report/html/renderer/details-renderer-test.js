@@ -394,8 +394,8 @@ describe('DetailsRenderer', () => {
         type: 'source-location',
         url: 'https://www.example.com/script.js',
         urlIsNetworkResource: true,
-        line: 0,
-        column: 0,
+        line: 10,
+        column: 5,
       };
       const details = {
         type: 'table',
@@ -408,7 +408,7 @@ describe('DetailsRenderer', () => {
       const anchorEl = sourceLocationEl.querySelector('a');
       assert.strictEqual(sourceLocationEl.localName, 'div');
       assert.equal(anchorEl.href, 'https://www.example.com/script.js');
-      assert.equal(sourceLocationEl.textContent, '/script.js:1:0(www.example.com)');
+      assert.equal(sourceLocationEl.textContent, '/script.js:11:5(www.example.com)');
       assert.equal(sourceLocationEl.getAttribute('data-url'), sourceLocation.url);
       assert.equal(sourceLocationEl.getAttribute('data-line'), sourceLocation.line);
       assert.equal(sourceLocationEl.getAttribute('data-column'), sourceLocation.column);
