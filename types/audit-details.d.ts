@@ -170,7 +170,7 @@ declare global {
       export interface SourceLocationValue {
         type: 'source-location';
         /** False if url doesn't refer to a real network resource - which is when there's a magic comment sourceURL. */
-        isLink: boolean;
+        canLink: boolean;
         url: string;
         line: number;
         column: number;

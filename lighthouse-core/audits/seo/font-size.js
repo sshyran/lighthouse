@@ -167,7 +167,7 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
     // via new URL(magic text, source file url).href.
     // Besides, even if we could resolve the URL, it wouldn't exist and we shouldn't
     // display this as an anchor.
-    const isLink = !stylesheet.hasSourceURL;
+    const canLink = !stylesheet.hasSourceURL;
 
     let line = range.startLine;
     let column = range.startColumn;
@@ -188,7 +188,7 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
     }
 
     return {
-      source: {type: 'source-location', isLink, url: stylesheet.sourceURL, line, column},
+      source: {type: 'source-location', canLink, url: stylesheet.sourceURL, line, column},
       selector,
     };
   }

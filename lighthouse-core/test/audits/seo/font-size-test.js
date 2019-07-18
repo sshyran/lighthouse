@@ -215,28 +215,28 @@ describe('SEO: Font size audit', () => {
     assert.deepEqual(auditResult.details.items[0].source, {
       type: 'source-location',
       url: 'http://www.example.com/styles-1.css',
-      isLink: true,
+      canLink: true,
       line: 50,
       column: 50,
     });
     assert.deepEqual(auditResult.details.items[1].source, {
       type: 'source-location',
       url: 'http://www.example.com',
-      isLink: true,
+      canLink: true,
       line: 15,
       column: 10,
     });
     assert.deepEqual(auditResult.details.items[2].source, {
       type: 'source-location',
       url: 'http://www.example.com',
-      isLink: true,
+      canLink: true,
       line: 5,
       column: 15,
     });
     assert.deepEqual(auditResult.details.items[3].source, {
       type: 'source-location',
       url: 'something-magical.css',
-      isLink: false,
+      canLink: false,
       line: 10,
       column: 10,
     });

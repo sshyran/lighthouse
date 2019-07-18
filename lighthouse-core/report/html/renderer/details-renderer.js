@@ -386,7 +386,7 @@ class DetailsRenderer {
    */
   renderSourceLocation(item) {
     const text = `${item.url}:${item.line + 1}:${item.column}`;
-    const element = item.isLink ? this.renderTextURL(text) : this._renderText(text);
+    const element = item.canLink ? this.renderTextURL(text) : this._renderText(text);
     element.classList.add('lh-source-location__location');
     element.setAttribute('data-url', item.url);
     element.setAttribute('data-line', String(item.line));
