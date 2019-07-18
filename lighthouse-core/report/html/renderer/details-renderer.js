@@ -385,10 +385,19 @@ class DetailsRenderer {
    * @protected
    */
   renderSourceLocation(item) {
-    // TODO use source map
     const element = this.renderTextURL(`${item.url}:${item.line + 1}:${item.column}`);
     element.classList.add('lh-source-location__location');
-    // TODO: remove sourceURL. see comment on UILocationValue doc.
+
+    // For the data-url, use `sourceURL` if defined, else use `url`.
+    // Why: `sourceURL` is the exact text found in a magic sourceURL comment, but `url` for the
+    // same source file will be the text in that magic comment w/ the source file's url as the
+    // base url (new URL(sourceURL, baseURL).href).
+    // ex: magic comment text: filenameFromSourceURLComment.css
+    //     url of source file: http://localhost:8000/
+    //               item.url: http://localhost:8000/filenameFromSourceURLComment.css
+    // When DevTools tries to linkify `http://localhost:8000/filenameFromSourceURLComment.css`,
+    // it does so as if it's an actual URL and fails to link to the file in the Sources panel.
+    // But, using just the magic comment text works.
     element.setAttribute('data-url', item.sourceURL || item.url);
     element.setAttribute('data-line', String(item.line));
     element.setAttribute('data-column', String(item.column));
