@@ -121,7 +121,7 @@ function nodeToTableNode(node) {
  * @param {string} baseURL
  * @param {FailingNodeData['cssRule']} styleDeclaration
  * @param {FailingNodeData['node']} node
- * @returns {{source: LH.Audit.Details.UrlValue | LH.Audit.Details.UILocationValue | LH.Audit.Details.CodeValue, selector: string | LH.Audit.Details.NodeValue}}
+ * @returns {{source: LH.Audit.Details.UrlValue | LH.Audit.Details.SourceLocationValue | LH.Audit.Details.CodeValue, selector: string | LH.Audit.Details.NodeValue}}
  */
 function findStyleRuleSource(baseURL, styleDeclaration, node) {
   if (!styleDeclaration ||
@@ -185,7 +185,7 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
 
     const magicCommentSourceUrl = stylesheet && stylesheet.hasSourceURL ? sourceURL : undefined;
     return {
-      source: {type: 'ui-location', sourceURL: magicCommentSourceUrl, url, line, column},
+      source: {type: 'source-location', sourceURL: magicCommentSourceUrl, url, line, column},
       selector,
     };
   }
@@ -270,7 +270,7 @@ class FontSize extends Audit {
 
     /** @type {LH.Audit.Details.Table['headings']} */
     const headings = [
-      {key: 'source', itemType: 'ui-location', text: 'Source'},
+      {key: 'source', itemType: 'source-location', text: 'Source'},
       {key: 'selector', itemType: 'code', text: 'Selector'},
       {key: 'coverage', itemType: 'text', text: '% of Page Text'},
       {key: 'fontSize', itemType: 'text', text: 'Font Size'},

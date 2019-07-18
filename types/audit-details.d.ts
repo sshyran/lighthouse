@@ -82,7 +82,7 @@ declare global {
       }
 
       /** Possible types of values found within table items. */
-      type ItemValueTypes = 'bytes' | 'code' | 'link' | 'ms' | 'node' | 'ui-location' | 'numeric' | 'text' | 'thumbnail' | 'timespanMs' | 'url';
+      type ItemValueTypes = 'bytes' | 'code' | 'link' | 'ms' | 'node' | 'source-location' | 'numeric' | 'text' | 'thumbnail' | 'timespanMs' | 'url';
 
       // TODO(bckenny): unify Table/Opportunity headings and items on next breaking change.
 
@@ -104,7 +104,7 @@ declare global {
 
       export type TableItem = {
         debugData?: DebugData;
-        [p: string]: string | number | boolean | undefined | DebugData | NodeValue | UILocationValue | LinkValue | UrlValue | CodeValue;
+        [p: string]: string | number | boolean | undefined | DebugData | NodeValue | SourceLocationValue | LinkValue | UrlValue | CodeValue;
       }
 
       export interface OpportunityColumnHeading {
@@ -167,8 +167,8 @@ declare global {
         nodeLabel?: string;
       }
 
-      export interface UILocationValue {
-        type: 'ui-location';
+      export interface SourceLocationValue {
+        type: 'source-location';
         /** TODO: remove `sourceURL`.
          * It's only necessary for the case where a file has a magic sourceURL comment.
          * Since `url` is made with the surrounding source file's URL as the base URL (new URL(sourceURL, baseURL).href),

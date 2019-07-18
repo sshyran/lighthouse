@@ -213,8 +213,8 @@ class DetailsRenderer {
         case 'node': {
           return this.renderNode(value);
         }
-        case 'ui-location': {
-          return this.renderUILocation(value);
+        case 'source-location': {
+          return this.renderSourceLocation(value);
         }
         case 'url': {
           return this.renderTextURL(value.value);
@@ -380,14 +380,14 @@ class DetailsRenderer {
   }
 
   /**
-   * @param {LH.Audit.Details.UILocationValue} item
+   * @param {LH.Audit.Details.SourceLocationValue} item
    * @return {Element}
    * @protected
    */
-  renderUILocation(item) {
+  renderSourceLocation(item) {
     // TODO use source map
     const element = this.renderTextURL(`${item.url}:${item.line + 1}:${item.column}`);
-    element.classList.add('lh-ui-location__location');
+    element.classList.add('lh-source-location__location');
     // TODO: remove sourceURL. see comment on UILocationValue doc.
     element.setAttribute('data-url', item.sourceURL || item.url);
     element.setAttribute('data-line', String(item.line));
