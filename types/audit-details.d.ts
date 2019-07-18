@@ -178,7 +178,7 @@ declare global {
          *
          * Workaround: use `sourceURL` if defined for the data-url, else use `url`.
         */
-        sourceURL: string;
+        sourceURL?: string;
         url: string;
         line: number;
         column: number;

@@ -164,7 +164,7 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
     // Note, URLs resolved from a magic comment aren't expected to _actually_ exist ...
     const sourceURL = stylesheet ? stylesheet.sourceURL : '';
     const url = new URL(sourceURL, baseURL).href;
-  
+
     let line = range.startLine + 1;
     let column = range.startColumn;
 
