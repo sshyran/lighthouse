@@ -43,6 +43,8 @@ cp -pPR "$lh_bg_js" "$lh_worker_dir/lighthouse-dt-bundle.js"
 echo -e "\033[96m ✓\033[39m (Potentially stale) lighthouse-dt-bundle copied."
 
 # copy report generator + cached resources into $fe_lh_dir
+# use dir/* format to copy over all files in dt-report-resources directly to $fe_lh_dir 
+# dir/ format behavior changes based on if their exists a folder named dir, which can get weird
 cp -r dist/dt-report-resources/* $fe_lh_dir
 
 # update expected version string in tests

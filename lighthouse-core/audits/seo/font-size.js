@@ -149,39 +149,49 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
   }
 
   if (styleDeclaration.stylesheet && !styleDeclaration.stylesheet.sourceURL) {
+    // Dynamically injected into page.
     return {
       source: {type: 'code', value: 'dynamic'},
       selector,
     };
   }
 
-  if (styleDeclaration.range) {
+  // !!range == has defined location in a source file (.css or .html)
+  if (styleDeclaration.stylesheet && styleDeclaration.range) {
+    const {range, stylesheet} = styleDeclaration;
+
     // The magic comment sourceURL, if any. Used to resolve a url relative to the baseUrl.
     // Note, URLs resolved from a magic comment aren't expected to _actually_ exist ...
-    const sourceURL = styleDeclaration.stylesheet ? styleDeclaration.stylesheet.sourceURL : '';
+    const sourceURL = stylesheet ? stylesheet.sourceURL : '';
     const url = new URL(sourceURL, baseURL).href;
-    // TODO when is `styleDeclaration.range` null ???
-    let {startLine, startColumn} = styleDeclaration.range ? styleDeclaration.range : {startLine: 0, startColumn: 0};
+  
+    let line = range.startLine + 1;
+    let column = range.startColumn;
 
-    // Inline elements need to add the startLine/startColumn of the <script> element to the ui location, so that the location
-    // is relevant to the HTML file the stylesheet is within.
-    // But, if an inline stylesheet has a sourceURL magic comment, `hasSourceURL` is true and thus `styleDeclaration.range` is sufficient.
-    if (styleDeclaration.stylesheet && styleDeclaration.stylesheet.isInline && !styleDeclaration.stylesheet.hasSourceURL) {
-      startLine += styleDeclaration.stylesheet.startLine;
+    // Add the startLine/startColumn of the <style> element to the range, if stylesheet
+    // is inline.
+    // Always use the rule's location if a sourceURL magic comment is
+    // present (`hasSourceURL` is true) - this makes the line/col relative to the start
+    // of the style tag, which makes them relevant when the "file" is open in DevTool's
+    // Sources panel.
+    const addHtmlLocationOffset = stylesheet.isInline && !stylesheet.hasSourceURL;
+    if (addHtmlLocationOffset) {
+      line += stylesheet.startLine;
       // The column the stylesheet begins on is only relevant if the rule is declared on the same line.
-      // `<div>...</div><style>.some-rule{}`
-      if (styleDeclaration.range && styleDeclaration.range.startLine === 0) {
-        startColumn += styleDeclaration.stylesheet.startColumn;
+      if (range.startLine === 0) {
+        column += stylesheet.startColumn;
       }
     }
 
-    const magicCommentSourceUrl = styleDeclaration.stylesheet && styleDeclaration.stylesheet.hasSourceURL ? sourceURL : undefined;
+    const magicCommentSourceUrl = stylesheet && stylesheet.hasSourceURL ? sourceURL : undefined;
     return {
-      source: {type: 'ui-location', sourceURL: magicCommentSourceUrl, url, line: startLine, column: startColumn},
+      source: {type: 'ui-location', sourceURL: magicCommentSourceUrl, url, line, column},
       selector,
     };
   }
 
+  // The responsible style declaration was not captured in the font-size gatherer due to
+  // the rate limiting we do in `fetchFailingNodeSourceRules`.
   return {
     selector,
     source: {type: 'code', value: 'Unknown'},
