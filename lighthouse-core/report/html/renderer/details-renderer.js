@@ -385,8 +385,14 @@ class DetailsRenderer {
    * @protected
    */
   renderSourceLocation(item) {
-    const text = `${item.url}:${item.line + 1}:${item.column}`;
-    const element = item.canLink ? this.renderTextURL(text) : this._renderText(text);
+    let element;
+    if (item.canLink) {
+      element = this.renderTextURL(item.url);
+      this._dom.find('a', element).textContent += `:${item.line + 1}:${item.column}`;
+    } else {
+      element = this._renderText(`${item.url}:${item.line + 1}:${item.column}`);
+    }
+
     element.classList.add('lh-source-location__location');
     element.setAttribute('data-url', item.url);
     element.setAttribute('data-line', String(item.line));
