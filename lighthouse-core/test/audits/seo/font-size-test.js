@@ -137,108 +137,117 @@ describe('SEO: Font size audit', () => {
     expect(auditResult.displayValue).toBeDisplayString('0% legible text');
   });
 
-  it('attributes source location', async () => {
-    // From external stylesheet.
-    const style1 = {
-      styleSheetId: 1,
-      stylesheet: {
-        sourceURL: 'http://www.example.com/styles-1.css',
-      },
-      type: 'Regular',
-      range: {
-        startLine: 50,
-        startColumn: 50,
-      },
-    };
-    // From inline <style>. No magic comment sourceURL.
-    const style2 = {
-      styleSheetId: 2,
-      stylesheet: {
-        sourceURL: 'http://www.example.com',
-        isInline: true,
-        startLine: 5,
-        startColumn: 5,
-      },
-      type: 'Regular',
-      range: {
-        startLine: 10,
-        startColumn: 10,
-      },
-    };
-    // From inline <style>. No magic comment sourceURL. Rule on the same line as <style>.
-    const style3 = {
-      styleSheetId: 3,
-      stylesheet: {
-        sourceURL: 'http://www.example.com',
-        isInline: true,
-        startLine: 5,
-        startColumn: 5,
-      },
-      type: 'Regular',
-      range: {
-        startLine: 0,
-        startColumn: 10,
-      },
-    };
-    // From inline <style>. Magic comment sourceURL.
-    const style4 = {
-      styleSheetId: 4,
-      stylesheet: {
-        sourceURL: 'something-magical.css',
-        isInline: true,
-        hasSourceURL: true,
-        startLine: 5,
-        startColumn: 5,
-      },
-      type: 'Regular',
-      range: {
-        startLine: 10,
-        startColumn: 10,
-      },
-    };
-    const artifacts = {
-      URL: {finalUrl: 'http://www.example.com'},
-      MetaElements: makeMetaElements(validViewport),
-      FontSize: {
-        analyzedFailingNodesData: [
-          {textLength: 4, fontSize: 1, node: {nodeId: 1}, cssRule: style1},
-          {textLength: 3, fontSize: 1, node: {nodeId: 2}, cssRule: style2},
-          {textLength: 2, fontSize: 1, node: {nodeId: 3}, cssRule: style3},
-          {textLength: 1, fontSize: 1, node: {nodeId: 4}, cssRule: style4},
-        ],
-      },
-      TestedAsMobileDevice: true,
-    };
-    const auditResult = await FontSizeAudit.audit(artifacts, getFakeContext());
+  describe('attributes source location', () => {
+    function runFontSizeAuditWithSingleFailingStyle(style) {
+      const artifacts = {
+        URL: {finalUrl: 'http://www.example.com'},
+        MetaElements: makeMetaElements(validViewport),
+        FontSize: {
+          analyzedFailingNodesData: [
+            {textLength: 1, fontSize: 1, node: {nodeId: 1}, cssRule: style},
+          ],
+        },
+        TestedAsMobileDevice: true,
+      };
+      return FontSizeAudit.audit(artifacts, getFakeContext());
+    }
 
-    assert.equal(auditResult.details.items.length, 4);
-    assert.deepEqual(auditResult.details.items[0].source, {
-      type: 'source-location',
-      url: 'http://www.example.com/styles-1.css',
-      urlIsNetworkResource: true,
-      line: 50,
-      column: 50,
+    it('to external stylesheet', async () => {
+      const auditResult = await runFontSizeAuditWithSingleFailingStyle({
+        stylesheet: {
+          sourceURL: 'http://www.example.com/styles-1.css',
+        },
+        type: 'Regular',
+        range: {
+          startLine: 50,
+          startColumn: 50,
+        },
+      });
+
+      assert.equal(auditResult.details.items.length, 1);
+      assert.deepEqual(auditResult.details.items[0].source, {
+        type: 'source-location',
+        url: 'http://www.example.com/styles-1.css',
+        urlIsNetworkResource: true,
+        line: 50,
+        column: 50,
+      });
     });
-    assert.deepEqual(auditResult.details.items[1].source, {
-      type: 'source-location',
-      url: 'http://www.example.com',
-      urlIsNetworkResource: true,
-      line: 15,
-      column: 10,
+
+    it('to inline <style>', async () => {
+      const auditResult = await runFontSizeAuditWithSingleFailingStyle({
+        stylesheet: {
+          sourceURL: 'http://www.example.com',
+          isInline: true,
+          startLine: 5,
+          startColumn: 5,
+        },
+        type: 'Regular',
+        range: {
+          startLine: 10,
+          startColumn: 10,
+        },
+      });
+
+      assert.equal(auditResult.details.items.length, 1);
+      assert.deepEqual(auditResult.details.items[0].source, {
+        type: 'source-location',
+        url: 'http://www.example.com',
+        urlIsNetworkResource: true,
+        line: 15,
+        column: 10,
+      });
     });
-    assert.deepEqual(auditResult.details.items[2].source, {
-      type: 'source-location',
-      url: 'http://www.example.com',
-      urlIsNetworkResource: true,
-      line: 5,
-      column: 15,
+
+    it('to inline <style> with rule on the same line as <style>', async () => {
+      const auditResult = await runFontSizeAuditWithSingleFailingStyle({
+        stylesheet: {
+          sourceURL: 'http://www.example.com',
+          isInline: true,
+          startLine: 5,
+          startColumn: 5,
+        },
+        type: 'Regular',
+        range: {
+          startLine: 0,
+          startColumn: 10,
+        },
+      });
+
+      assert.equal(auditResult.details.items.length, 1);
+      assert.deepEqual(auditResult.details.items[0].source, {
+        type: 'source-location',
+        url: 'http://www.example.com',
+        urlIsNetworkResource: true,
+        line: 5,
+        column: 15,
+      });
     });
-    assert.deepEqual(auditResult.details.items[3].source, {
-      type: 'source-location',
-      url: 'something-magical.css',
-      urlIsNetworkResource: false,
-      line: 10,
-      column: 10,
+
+    it('to inline <style> with magic sourceURL comment', async () => {
+      const auditResult = await runFontSizeAuditWithSingleFailingStyle({
+        stylesheet: {
+          sourceURL: 'something-magical.css',
+          isInline: true,
+          hasSourceURL: true,
+          startLine: 5,
+          startColumn: 5,
+        },
+        type: 'Regular',
+        range: {
+          startLine: 10,
+          startColumn: 10,
+        },
+      });
+
+      assert.equal(auditResult.details.items.length, 1);
+      assert.deepEqual(auditResult.details.items[0].source, {
+        type: 'source-location',
+        url: 'something-magical.css',
+        urlIsNetworkResource: false,
+        line: 10,
+        column: 10,
+      });
     });
   });
 
