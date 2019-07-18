@@ -121,7 +121,7 @@ module.exports = [
               {
                 source: {
                   url: /seo-tester\.html.+$/,
-                  canLink: true,
+                  urlIsNetworkResource: true,
                   line: 23,
                   column: 12,
                 },
@@ -131,7 +131,7 @@ module.exports = [
               {
                 source: {
                   url: /seo-tester\.html.+$/,
-                  canLink: true,
+                  urlIsNetworkResource: true,
                   line: 27,
                   column: 55,
                 },
@@ -141,7 +141,7 @@ module.exports = [
               {
                 source: {
                   url: /seo-tester-inline-magic\.css$/,
-                  canLink: false,
+                  urlIsNetworkResource: false,
                   line: 2,
                   column: 14,
                 },
@@ -151,7 +151,7 @@ module.exports = [
               {
                 source: {
                   url: /seo-tester-styles-magic\.css$/,
-                  canLink: false,
+                  urlIsNetworkResource: false,
                   line: 2,
                   column: 10,
                 },

@@ -386,7 +386,7 @@ class DetailsRenderer {
    */
   renderSourceLocation(item) {
     let element;
-    if (item.canLink) {
+    if (item.urlIsNetworkResource) {
       element = this.renderTextURL(item.url);
       this._dom.find('a', element).textContent += `:${item.line + 1}:${item.column}`;
     } else {
