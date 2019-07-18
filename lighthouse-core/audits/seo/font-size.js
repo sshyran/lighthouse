@@ -161,7 +161,7 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
 
     // DevTools protocol does not provide the resource URL if there is a magic `sourceURL` comment.
     // `sourceURL` will be the raw value of the magic `sourceURL` comment, which likely refers to
-    // a file at build time, not one that is served over the network that we could link to. 
+    // a file at build time, not one that is served over the network that we could link to.
     const urlIsNetworkResource = !stylesheet.hasSourceURL;
 
     let line = range.startLine;

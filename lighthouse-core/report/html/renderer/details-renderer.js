@@ -393,7 +393,7 @@ class DetailsRenderer {
       element = this._renderText(`${item.url}:${item.line + 1}:${item.column} (from sourceURL)`);
     }
 
-    element.classList.add('lh-source-location__location');
+    element.classList.add('lh-source-location');
     element.setAttribute('data-url', item.url);
     element.setAttribute('data-line', String(item.line));
     element.setAttribute('data-column', String(item.column));
