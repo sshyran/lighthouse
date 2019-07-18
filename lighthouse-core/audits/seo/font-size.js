@@ -165,7 +165,7 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
     const sourceURL = stylesheet ? stylesheet.sourceURL : '';
     const url = new URL(sourceURL, baseURL).href;
 
-    let line = range.startLine + 1;
+    let line = range.startLine;
     let column = range.startColumn;
 
     // Add the startLine/startColumn of the <style> element to the range, if stylesheet
