@@ -3090,7 +3090,7 @@
         "headings": [
           {
             "key": "source",
-            "itemType": "url",
+            "itemType": "source-location",
             "text": "Source"
           },
           {
@@ -3111,7 +3111,10 @@
         ],
         "items": [
           {
-            "source": "Legible text",
+            "source": {
+              "type": "code",
+              "value": "Legible text"
+            },
             "selector": "",
             "coverage": "100.00%",
             "fontSize": "≥ 12px"

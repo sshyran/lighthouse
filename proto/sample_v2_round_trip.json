@@ -767,7 +767,7 @@
             "details": {
                 "headings": [
                     {
-                        "itemType": "url",
+                        "itemType": "source-location",
                         "key": "source",
                         "text": "Source"
                     },
@@ -791,7 +791,10 @@
                     {
                         "coverage": "100.00%",
                         "fontSize": "\u2265 12px",
-                        "source": "Legible text"
+                        "source": {
+                            "type": "code",
+                            "value": "Legible text"
+                        }
                     }
                 ],
                 "type": "table"
