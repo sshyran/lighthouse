@@ -7,7 +7,6 @@
 
 /** @typedef {LH.Artifacts.FontSize['analyzedFailingNodesData'][0]} FailingNodeData */
 
-const URL = require('../../lib/url-shim.js');
 const i18n = require('../../lib/i18n/i18n.js');
 const Audit = require('../audit.js');
 const ComputedViewportMeta = require('../../computed/viewport-meta.js');
@@ -160,10 +159,15 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
   if (styleDeclaration.stylesheet && styleDeclaration.range) {
     const {range, stylesheet} = styleDeclaration;
 
-    // The magic comment sourceURL, if any. Used to resolve a url relative to the baseUrl.
-    // Note, URLs resolved from a magic comment aren't expected to _actually_ exist ...
-    const sourceURL = stylesheet ? stylesheet.sourceURL : '';
-    const url = new URL(sourceURL, baseURL).href;
+    // If a magic sourceURL comment is present, it is typically as a URL relative to the
+    // source file URL. However, the DevTools protocol offers no way to get the true
+    // source file URL if a magic comment is present - it's usually found at
+    // stylesheet.sourceURL ... except if there's a magic comment, then sourceURL is the
+    // raw text from the comment. So there's no way to generate the resolved url
+    // via new URL(magic text, source file url).href.
+    // Besides, even if we could resolve the URL, it wouldn't exist and we shouldn't
+    // display this as an anchor.
+    const isLink = !stylesheet.hasSourceURL;
 
     let line = range.startLine;
     let column = range.startColumn;
@@ -183,9 +187,8 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
       }
     }
 
-    const magicCommentSourceUrl = stylesheet && stylesheet.hasSourceURL ? sourceURL : undefined;
     return {
-      source: {type: 'source-location', sourceURL: magicCommentSourceUrl, url, line, column},
+      source: {type: 'source-location', isLink, url: stylesheet.sourceURL, line, column},
       selector,
     };
   }
