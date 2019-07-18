@@ -121,7 +121,7 @@ function nodeToTableNode(node) {
  * @param {string} baseURL
  * @param {FailingNodeData['cssRule']} styleDeclaration
  * @param {FailingNodeData['node']} node
- * @returns {{source: {type: 'url', value: string} | {type: 'ui-location', sourceURL?: string, url: string, line: number, column: number} | {type: 'code', value: string}, selector: string | {type: 'node', selector: string, snippet: string}}}
+ * @returns {{source: LH.Audit.Details.UrlValue | LH.Audit.Details.UILocationValue | LH.Audit.Details.CodeValue, selector: string | LH.Audit.Details.NodeValue}}
  */
 function findStyleRuleSource(baseURL, styleDeclaration, node) {
   if (!styleDeclaration ||
