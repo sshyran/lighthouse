@@ -973,8 +973,7 @@
   font-size: large;
 }
 
-.lh-code,
-.lh-source-location {
+.lh-code {
   white-space: normal;
   margin-top: 0;
   font-size: 85%;
