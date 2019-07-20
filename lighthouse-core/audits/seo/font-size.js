@@ -156,6 +156,8 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
   }
 
   // !!range == has defined location in a source file (.css or .html)
+  // sourceURL == stylesheet URL || raw value of magic `sourceURL` comment
+  // hasSourceURL == flag that signals sourceURL is the raw value of a magic `sourceURL` comment, *not* a real resource
   if (styleDeclaration.stylesheet && styleDeclaration.range) {
     const {range, stylesheet} = styleDeclaration;
 
