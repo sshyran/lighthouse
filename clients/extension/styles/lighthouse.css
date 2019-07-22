@@ -46,22 +46,6 @@ html, body {
   margin-right: 16px;
 }
 
-.header-titles__url {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  margin: 0;
-  font-size: 14px;
-  opacity: 0.74;
-  color: currentColor;
-  font-family: 'Roboto', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  font-weight: 400;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .button {
   cursor: pointer;
   font-family: 'Roboto', Arial, sans-serif;
@@ -101,6 +85,10 @@ html, body {
   position: relative;
 }
 
+.section--devtools-info {
+  font-size: 16px;
+}
+
 .button--generate__wrapper {
   display: flex;
   flex-direction: column;
@@ -115,20 +103,4 @@ html, body {
   padding: 8px 16px 10px 16px;
   align-self: stretched;
   margin-left: auto;
-}
-
-/* 1. scrollbar when extension is too small */
-.options {
-  overflow: auto; /* [1] */
-  display: block;
-  text-align: left;
-}
-
-.options__title {
-  font-weight: 300;
-}
-
-.options__list {
-  padding: 0;
-  list-style-type: none;
 }
