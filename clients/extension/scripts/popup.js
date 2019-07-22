@@ -7,12 +7,9 @@
 
 /** @typedef {import('../../../lighthouse-core/lib/lh-error.js')} LighthouseError */
 
-const VIEWER_ORIGIN = isDevMode() ? 'http://localhost:8000' : 'https://googlechrome.github.io';
-const VIEWER_PATH = isDevMode() ? '/' : '/lighthouse/viewer/';
-
-function isDevMode() {
-  return !('update_url' in chrome.runtime.getManifest());
-}
+const DEV = !('update_url' in chrome.runtime.getManifest());
+const VIEWER_ORIGIN = DEV ? 'http://localhost:8000' : 'https://googlechrome.github.io';
+const VIEWER_PATH = DEV ? '/' : '/lighthouse/viewer/';
 
 /** @type {?string} */
 let siteURL = null;
@@ -52,9 +49,7 @@ async function initPopup() {
 
     siteURL = tabs[0].url || null;
     const url = siteURL ? new URL(siteURL) : null;
-    const origin = url ? url.origin : '';
     const host = url ? url.host : '';
-    find('.header-titles__url').textContent = origin;
     if (host.startsWith('localhost')) {
       generateReportButton.disabled = true;
     }
