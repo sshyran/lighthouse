@@ -25,6 +25,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
       </div>
       <div class="button--generate__wrapper">
         <button class="button button--generate" id="generate-report">Generate report</button>
+        <button class="button button--configure" id="configure-options">Options</button>
         <span>Uses the <a href="https://developers.google.com/speed/pagespeed/insights/" target="_blank" rel="nofollow">PSI</a> API</span>
       </div>
     </div>
@@ -33,6 +34,23 @@ Unless required by applicable law or agreed to in writing, software distributed 
       Shortcut to open DevTools: Cmd + Shift + I or F12
     </div>
   </main>
+
+  <aside class="options subpage">
+    <h2 class="options__title" hidden>Settings</h2>
+
+    <h2 class="options__title">Categories</h2>
+    <ul class="options__list options__categories">
+      <!-- filled dynamically -->
+    </ul>
+
+    <h2 class="options__title">Device</h2>
+    <ul class="options__list options__device">
+      <input type="radio" name="device" value="mobile">Mobile</input>
+      <input type="radio" name="device" value="desktop">Desktop</input>
+    </ul>
+
+    <button class="button button--ok" id="ok">OK</button>
+  </aside>
 
   <script src="scripts/popup.js"></script>
 </body>

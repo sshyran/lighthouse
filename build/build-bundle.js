@@ -82,14 +82,16 @@ async function browserifyFile(entryPath, distPath) {
   }
 
   // Expose the audits, gatherers, and computed artifacts so they can be dynamically loaded.
-  const corePath = './lighthouse-core/';
-  const driverPath = `${corePath}gather/`;
-  audits.forEach(audit => {
-    bundle = bundle.require(audit, {expose: audit.replace(corePath, '../')});
-  });
-  gatherers.forEach(gatherer => {
-    bundle = bundle.require(gatherer, {expose: gatherer.replace(driverPath, '../gather/')});
-  });
+  if (!isExtension(entryPath)) {
+    const corePath = './lighthouse-core/';
+    const driverPath = `${corePath}gather/`;
+    audits.forEach(audit => {
+      bundle = bundle.require(audit, {expose: audit.replace(corePath, '../')});
+    });
+    gatherers.forEach(gatherer => {
+      bundle = bundle.require(gatherer, {expose: gatherer.replace(driverPath, '../gather/')});
+    });
+  }
 
   // browerify's url shim doesn't work with .URL in node_modules,
   // and within robots-parser, it does `var URL = require('url').URL`, so we expose our own.

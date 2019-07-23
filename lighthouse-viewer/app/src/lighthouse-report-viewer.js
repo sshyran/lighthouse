@@ -29,22 +29,18 @@ const PSI_KEY = 'AIzaSyAjcDRNN9CX9dCazhqI4lGR7yyQbkd_oYE';
 
 /**
  * @param {string} url
+ * @param {string[]} categories
+ * @param {string} device
  * @return {Promise<PSIResponse>}
  */
-function callPSI(url) {
+function callPSI(url, categories, device) {
   const psiUrl = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
   /** @type {Record<string, string | string[]>} */
   const params = {
     key: PSI_KEY,
     url,
-    category: [
-      'performance',
-      'accessibility',
-      'seo',
-      'best-practices',
-      'pwa',
-    ],
-    strategy: 'mobile',
+    category: categories,
+    strategy: device,
     utm_source: 'Lighthouse Chrome Extension',
   };
   Object.entries(params).forEach(([key, value]) => {
@@ -76,12 +72,12 @@ class LighthouseReportViewer {
      */
     this._reportIsFromGist = false;
 
-    this._reportIsFromPSI = false;
-
     const params = new URLSearchParams(location.search);
     const url = params.get('url');
-    if (url) {
-      this._loadFromPSI(url);
+    const categories = params.get('categories');
+    const device = params.get('device');
+    if (url && categories && device) {
+      this._loadFromPSI(url, categories.split(','), device);
     } else {
       this._addEventListeners();
       this._loadFromDeepLink();
@@ -201,9 +197,9 @@ class LighthouseReportViewer {
       renderer.renderReport(json, container);
 
       // Only give gist-saving callback (and clear gist from query string) if
-      // current report isn't from a gist or PSI.
+      // current report isn't from a gist.
       let saveCallback = null;
-      if (!this._reportIsFromGist && !this._reportIsFromPSI) {
+      if (!this._reportIsFromGist) {
         saveCallback = this._onSaveJson;
         history.pushState({}, '', LighthouseReportViewer.APP_URL);
       }
@@ -244,7 +240,7 @@ class LighthouseReportViewer {
       } catch (e) {
         throw new Error('Could not parse JSON file.');
       }
-      this._reportIsFromGist = this._reportIsFromPSI = false;
+      this._reportIsFromGist = false;
       this._replaceReportHtml(json);
     }).catch(err => logger.error(err.message));
   }
@@ -336,7 +332,7 @@ class LighthouseReportViewer {
     // Try paste as json content.
     try {
       const json = JSON.parse(e.clipboardData.getData('text'));
-      this._reportIsFromGist = this._reportIsFromPSI = false;
+      this._reportIsFromGist = false;
       this._replaceReportHtml(json);
 
       if (window.ga) {
@@ -400,7 +396,7 @@ class LighthouseReportViewer {
   _listenForMessages() {
     window.addEventListener('message', e => {
       if (e.source === self.opener && e.data.lhresults) {
-        this._reportIsFromGist = this._reportIsFromPSI = false;
+        this._reportIsFromGist = false;
         this._replaceReportHtml(e.data.lhresults);
 
         if (self.opener && !self.opener.closed) {
@@ -420,15 +416,16 @@ class LighthouseReportViewer {
 
   /**
    * @param {string} url
+   * @param {string[]} categories
+   * @param {string} device
    */
-  _loadFromPSI(url) {
+  _loadFromPSI(url, categories, device) {
     const loadingOverlayEl = document.createElement('div');
     loadingOverlayEl.classList.add('lh-loading-overlay');
     loadingOverlayEl.textContent = 'Waiting for Lighthouse results ...';
     find('.viewer-placeholder-inner', document.body).classList.add('lh-loading');
     document.body.appendChild(loadingOverlayEl);
-    callPSI(url).then(psiResponse => {
-      this._reportIsFromPSI = true;
+    callPSI(url, categories, device).then(psiResponse => {
       loadingOverlayEl.remove();
       this._replaceReportHtml(psiResponse.lighthouseResult);
     });

@@ -30,6 +30,7 @@
 
 .lighthouse-effects {
   position: relative;
+  pointer-events: none;
 }
 
 .lighthouse-effects img {
