@@ -141,6 +141,8 @@ function findStyleRuleSource(baseURL, styleDeclaration, node) {
     };
   }
 
+  // Combine all the selectors for the associated style rule
+  // example: .some-selector, .other-selector {...} => `.some-selector, .other-selector`
   let selector = '';
   if (styleDeclaration.parentRule) {
     const rule = styleDeclaration.parentRule;
