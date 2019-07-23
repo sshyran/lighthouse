@@ -268,7 +268,10 @@ describe('SEO: Font size audit', () => {
       });
 
       expect(auditResult.details.items[0]).toMatchObject({
-        source: URL.finalUrl,
+        source: {
+          type: 'url',
+          value: URL.finalUrl,
+        },
         selector: {
           type: 'node',
           selector: '#my-parent',
@@ -287,7 +290,10 @@ describe('SEO: Font size audit', () => {
       });
 
       expect(auditResult.details.items[0]).toMatchObject({
-        source: URL.finalUrl,
+        source: {
+          type: 'url',
+          value: URL.finalUrl,
+        },
         selector: {
           type: 'node',
           selector: '#my-parent',
