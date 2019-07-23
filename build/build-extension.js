@@ -30,24 +30,12 @@ function buildEntryPoint() {
 }
 
 /**
- * Copy popup.js to dist folder, inlining the current commit hash along the way.
- * @return {Promise<void>}
- */
-async function copyPopup() {
-  let popupSrc = fs.readFileSync(`${sourceDir}/scripts/popup.js`, {encoding: 'utf8'});
-  popupSrc = popupSrc.replace(/__COMMITHASH__/g, bundleBuilder.COMMIT_HASH);
-
-  const popupDir = `${distDir}/scripts`;
-  await makeDir(popupDir);
-  fs.writeFileSync(`${popupDir}/popup.js`, popupSrc);
-}
-
-/**
  * @return {Promise<void>}
  */
 async function copyAssets() {
   return cpy([
     '*.html',
+    'scripts/popup.js',
     'styles/**/*.css',
     'images/**/*',
     'manifest.json',
@@ -92,7 +80,6 @@ async function run() {
   await Promise.all([
     buildEntryPoint(),
     copyAssets(),
-    copyPopup(),
   ]);
 }
 
