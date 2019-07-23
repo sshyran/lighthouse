@@ -385,16 +385,21 @@ class DetailsRenderer {
    * @protected
    */
   renderSourceLocation(item) {
+    // Lines are never shown as zero-indexed.
+    const line = item.line + 1;
+    const column = item.column;
+    
     let element;
     if (item.urlIsNetworkResource) {
       element = this.renderTextURL(item.url);
-      this._dom.find('a', element).textContent += `:${item.line + 1}:${item.column}`;
+      this._dom.find('a', element).textContent += `:${line}:${column}`;
     } else {
-      element = this._renderText(`${item.url}:${item.line + 1}:${item.column} (from sourceURL)`);
+      element = this._renderText(`${item.url}:${line}:${column} (from sourceURL)`);
     }
-
+    
     element.classList.add('lh-source-location');
     element.setAttribute('data-url', item.url);
+    // Should pass `line` to `data-line` as zero-indexed, as DevTools expects that for linkifying.
     element.setAttribute('data-line', String(item.line));
     element.setAttribute('data-column', String(item.column));
     return element;
