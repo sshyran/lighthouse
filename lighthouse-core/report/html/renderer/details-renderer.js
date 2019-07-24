@@ -388,7 +388,7 @@ class DetailsRenderer {
     // Lines are never shown as zero-indexed.
     const line = item.line + 1;
     const column = item.column;
-    
+
     let element;
     if (item.urlIsNetworkResource) {
       element = this.renderTextURL(item.url);
@@ -396,7 +396,7 @@ class DetailsRenderer {
     } else {
       element = this._renderText(`${item.url}:${line}:${column} (from sourceURL)`);
     }
-    
+
     element.classList.add('lh-source-location');
     element.setAttribute('data-url', item.url);
     // Should pass `line` to `data-line` as zero-indexed, as DevTools expects that for linkifying.
