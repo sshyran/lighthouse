@@ -11,20 +11,36 @@ const Gatherer = require('./gatherer.js');
 
 class StartUrl extends Gatherer {
   /**
-   * Grab the manifest, extract it's start_url, attempt to `fetch()` it while offline
+   * Go offline, assess the start url, go back online.
    * @param {LH.Gatherer.PassContext} passContext
    * @return {Promise<LH.Artifacts['StartUrl']>}
    */
   async afterPass(passContext) {
+    // Offline pass is not actually offline in `afterPass`,
+    // each gatherer must set and cleanup its own offline state.
+    await passContext.driver.goOffline();
+    const result = await this._determineStartUrlAvailability(passContext);
+    await passContext.driver.goOnline(passContext);
+
+    return result;
+  }
+  /**
+   * Grab the manifest, extract it's start_url, attempt to `fetch()` it while offline
+   * @param {LH.Gatherer.PassContext} passContext
+   * @return {Promise<LH.Artifacts['StartUrl']>}
+   */
+  async _determineStartUrlAvailability(passContext) {
     const manifest = passContext.baseArtifacts.WebAppManifest;
     const startUrlInfo = this._readManifestStartUrl(manifest);
     if (startUrlInfo.isReadFailure) {
       return {statusCode: -1, explanation: startUrlInfo.reason};
     }
 
-    return this._attemptStartURLFetch(passContext.driver, startUrlInfo.startUrl).catch(() => {
+    try {
+      return await this._attemptStartURLFetch(passContext.driver, startUrlInfo.startUrl)
+    } catch (err) {
       return {statusCode: -1, explanation: 'Unable to fetch start URL via service worker.'};
-    });
+    }
   }
 
   /**
@@ -77,7 +93,7 @@ class StartUrl extends Gatherer {
         if (!response.fromServiceWorker) {
           return resolve({
             statusCode: -1,
-            explanation: 'Unable to fetch start URL via service worker.',
+            explanation: 'Fetched start URL but not via service worker.',
           });
         }
         // Successful SW-served fetch of the start_URL
