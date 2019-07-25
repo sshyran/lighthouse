@@ -37,7 +37,7 @@ class StartUrl extends Gatherer {
     }
 
     try {
-      return await this._attemptStartURLFetch(passContext.driver, startUrlInfo.startUrl)
+      return await this._attemptStartURLFetch(passContext.driver, startUrlInfo.startUrl);
     } catch (err) {
       return {statusCode: -1, explanation: 'Unable to fetch start URL via service worker.'};
     }

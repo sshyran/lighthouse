@@ -65,7 +65,7 @@ describe('StartUrl Gatherer', () => {
           'this is invalid',
           'https://example.com/manifest.json',
           'https://example.com/'
-        )
+        ),
       },
       driver: mockDriver,
     };
@@ -75,8 +75,9 @@ describe('StartUrl Gatherer', () => {
     expect(mockDriver.goOnline).toHaveBeenCalled();
     expect(result).toEqual({
       statusCode: -1,
-      explanation: `Error fetching web app manifest: ERROR: file isn't valid JSON: ` +
-      `SyntaxError: Unexpected token h in JSON at position 1.`,
+      explanation:
+        `Error fetching web app manifest: ERROR: file isn't valid JSON: ` +
+        `SyntaxError: Unexpected token h in JSON at position 1.`,
     });
   });
 
