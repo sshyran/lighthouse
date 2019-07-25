@@ -130,10 +130,43 @@ function lookupLocale(locale) {
  * @param {Record<string, *>} [values]
  */
 function _preprocessMessageValues(icuMessage, values = {}) {
-  const clonedValues = JSON.parse(JSON.stringify(values));
+  let clonedValues = JSON.parse(JSON.stringify(values));
   const parsed = MessageParser.parse(icuMessage);
+
+  const elements = _collectAllCustomElementsFromICU(parsed.elements);
+
+  clonedValues = _processParsedElements(Array.from(elements.values()), clonedValues);
+
+  return clonedValues;
+}
+
+function _collectAllCustomElementsFromICU(parsedIcu, elements = new Map()) {
+  // Rescurse into Plurals
+  parsedIcu
+    .filter(el => el.format && el.format.type === 'pluralFormat')
+    .forEach(el => {
+      const elemSet = new Map();
+      el.format.options.forEach(opt => opt.value.elements.forEach(elem => elemSet.set(elem.id, elem)));
+      const e = Array.from(elemSet.values());
+
+      // de dupe into main elements
+      const rElements = _collectAllCustomElementsFromICU(e, elements);
+
+      rElements.forEach((k, v) => elements[k] = v);
+    });
+
+  // add arguementElements
+  parsedIcu
+    .filter(el => el.type === 'argumentElement')
+    // @ts-ignore - el.id is always defined when el.format is defined
+    .forEach(el => elements.set(el.id, el));
+
+  return elements;
+}
+
+function _processParsedElements(icuElementsList, values = {}) {
   // Throw an error if a message's value isn't provided
-  parsed.elements
+  icuElementsList
     .filter(el => el.type === 'argumentElement')
     .forEach(el => {
       if (el.id && (el.id in values) === false) {
@@ -142,24 +175,24 @@ function _preprocessMessageValues(icuMessage, values = {}) {
     });
 
   // Round all milliseconds to the nearest 10
-  parsed.elements
+  icuElementsList
     .filter(el => el.format && el.format.style === 'milliseconds')
     // @ts-ignore - el.id is always defined when el.format is defined
-    .forEach(el => (clonedValues[el.id] = Math.round(clonedValues[el.id] / 10) * 10));
+    .forEach(el => (values[el.id] = Math.round(values[el.id] / 10) * 10));
 
   // Convert all seconds to the correct unit
-  parsed.elements
+  icuElementsList
     .filter(el => el.format && el.format.style === 'seconds' && el.id === 'timeInMs')
     // @ts-ignore - el.id is always defined when el.format is defined
-    .forEach(el => (clonedValues[el.id] = Math.round(clonedValues[el.id] / 100) / 10));
+    .forEach(el => (values[el.id] = Math.round(values[el.id] / 100) / 10));
 
   // Replace all the bytes with KB
-  parsed.elements
+  icuElementsList
     .filter(el => el.format && el.format.style === 'bytes')
     // @ts-ignore - el.id is always defined when el.format is defined
-    .forEach(el => (clonedValues[el.id] = clonedValues[el.id] / 1024));
+    .forEach(el => (values[el.id] = values[el.id] / 1024));
 
-  return clonedValues;
+  return values;
 }
 
 /**
