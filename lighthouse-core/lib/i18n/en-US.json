@@ -596,7 +596,7 @@
     "description": "[ICU Syntax] Label for an audit identifying the number of sequences of dependent network requests used to load the page."
   },
   "lighthouse-core/audits/critical-request-chains.js | title": {
-    "message": "Minimize critical requests depth",
+    "message": "Avoid chaining critical requests",
     "description": "Imperative title of a Lighthouse audit that tells the user to reduce the depth of critical network requests to enhance initial load of a page. Critical request chains are series of dependent network requests that are important for page rendering. For example, here's a 4-request-deep chain: The biglogo.jpg image is required, but is requested via the styles.css style code, which is requested by the initialize.js javascript, which is requested by the page's HTML. This is displayed in a list of audit titles that Lighthouse generates."
   },
   "lighthouse-core/audits/deprecations.js | columnDeprecate": {
@@ -1316,7 +1316,7 @@
     "description": "Summary text for the result of a Lighthouse audit that identifies the code on the page that the user doesn't control. This text summarizes the number of distinct entities that were found on the page."
   },
   "lighthouse-core/audits/third-party-summary.js | title": {
-    "message": "Third-Party usage",
+    "message": "Limit third-party usage",
     "description": "Title of a Lighthouse audit that identifies the code on the page that the user doesn't control. This is shown in a list of audits that Lighthouse generates."
   },
   "lighthouse-core/audits/time-to-first-byte.js | description": {
