@@ -13,6 +13,9 @@ class Offline extends Gatherer {
    * @param {LH.Gatherer.PassContext} passContext
    */
   beforePass(passContext) {
+    // This call sets up the offline state for the page navigation of the `offlinePass` in gather-runner.
+    // gather-runner will automatically go back online before the `afterPass` phase, so no additional
+    // cleanup is necessary.
     return passContext.driver.goOffline();
   }
 
