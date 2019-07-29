@@ -81,9 +81,10 @@ module.exports = [
         'errors-in-console': {
           score: 0,
           details: {
-            items: {
-              length: 8,
-            },
+            items: [
+              {description: /Application Cache Error/},
+              {description: /Error: An error/},
+            ],
           },
         },
         'is-on-https': {

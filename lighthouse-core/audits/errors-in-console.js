@@ -27,6 +27,8 @@ const UIStrings = {
 
 const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
+/** @typedef {{ignoredPatterns: undefined|Array<RegExp|string>}} AuditOptions */
+
 class ErrorLogs extends Audit {
   /**
    * @return {LH.Audit.Meta}
@@ -41,11 +43,43 @@ class ErrorLogs extends Audit {
     };
   }
 
+  /** @return {AuditOptions} */
+  static defaultOptions() {
+    return {
+      ignoredPatterns: undefined,
+    };
+  }
+
+
+  /**
+   * @template {{description: string | undefined}} T
+   * @param {Array<T>} items
+   * @param {AuditOptions} options
+   * @return {Array<T>}
+   */
+  static filterAccordingToOptions(items, options) {
+    const {ignoredPatterns} = options;
+    if (!ignoredPatterns) return items;
+
+    return items.filter(({description}) => {
+      if (!description) return true;
+      for (const pattern of ignoredPatterns) {
+        if (pattern instanceof RegExp && pattern.test(description)) return false;
+        if (typeof pattern === 'string' && description.includes(pattern)) return false;
+      }
+
+      return true;
+    });
+  }
+
   /**
    * @param {LH.Artifacts} artifacts
+   * @param {LH.Audit.Context} context
    * @return {LH.Audit.Product}
    */
-  static audit(artifacts) {
+  static audit(artifacts, context) {
+    const auditOptions = /** @type {AuditOptions} */ (context.options);
+
     const consoleEntries = artifacts.ConsoleMessages;
     const runtimeExceptions = artifacts.RuntimeExceptions;
     /** @type {Array<{source: string, description: string|undefined, url: string|undefined}>} */
@@ -72,7 +106,10 @@ class ErrorLogs extends Audit {
         };
       });
 
-    const tableRows = consoleRows.concat(runtimeExRows);
+    const tableRows = ErrorLogs.filterAccordingToOptions(
+      consoleRows.concat(runtimeExRows),
+      auditOptions
+    ).sort((a, b) => (a.description || '').localeCompare(b.description || ''));
 
     /** @type {LH.Audit.Details.Table['headings']} */
     const headings = [
