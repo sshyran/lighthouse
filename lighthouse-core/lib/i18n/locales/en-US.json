@@ -971,8 +971,8 @@
   "lighthouse-core/audits/seo/tap-targets.js | title": {
     "message": "Tap targets are sized appropriately"
   },
-  "lighthouse-core/audits/third-party-summary.js | columnMainThreadTime": {
-    "message": "Main Thread Time"
+  "lighthouse-core/audits/third-party-summary.js | columnBlockingTime": {
+    "message": "Blocking Time"
   },
   "lighthouse-core/audits/third-party-summary.js | columnThirdParty": {
     "message": "Third-Party"
@@ -981,10 +981,13 @@
     "message": "Third-party code can significantly impact load performance. Limit the number of redundant third-party providers and try to load third-party code after your page has primarily finished loading. [Learn more](https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/loading-third-party-javascript/)."
   },
   "lighthouse-core/audits/third-party-summary.js | displayValue": {
-    "message": "{itemCount, plural,\n    =1 {1 Third-Party Found}\n    other {# Third-Parties Found}\n  }"
+    "message": "Increased Total Blocking Time by {timeInMs, number, milliseconds} ms"
+  },
+  "lighthouse-core/audits/third-party-summary.js | failureTitle": {
+    "message": "Reduce impact of third-parties"
   },
   "lighthouse-core/audits/third-party-summary.js | title": {
-    "message": "Third-Party Usage"
+    "message": "Third-Party usage"
   },
   "lighthouse-core/audits/time-to-first-byte.js | description": {
     "message": "Time To First Byte identifies the time at which your server sends a response. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/ttfb)."
