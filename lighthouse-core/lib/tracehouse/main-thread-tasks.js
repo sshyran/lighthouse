@@ -44,104 +44,236 @@ const {taskGroups, taskNameToGroup} = require('./task-groups.js');
 class MainThreadTasks {
   /**
    * @param {LH.TraceEvent} event
-   * @param {TaskNode} [parent]
+   * @param {Pick<LH.TraceEvent, 'ph'|'ts'>} [endEvent]
    * @return {TaskNode}
    */
-  static _createNewTaskNode(event, parent) {
+  static _createNewTaskNode(event, endEvent) {
+    const isCompleteEvent = event.ph === 'X' && !endEvent;
+    const isStartEndEventPair = event.ph === 'B' && endEvent && endEvent.ph === 'E';
+    if (!isCompleteEvent && !isStartEndEventPair) {
+      throw new Error('Invalid parameters for _createNewTaskNode');
+    }
+
+    const startTime = event.ts;
+    const endTime = endEvent ? endEvent.ts : event.ts + Number(event.dur || 0);
+
     const newTask = {
       event,
-      startTime: event.ts,
-      endTime: event.ph === 'X' ? event.ts + Number(event.dur || 0) : NaN,
-      parent: parent,
-      children: [],
+      startTime,
+      endTime,
+      duration: endTime - startTime,
 
       // These properties will be filled in later
+      parent: undefined,
+      children: [],
       attributableURLs: [],
       group: taskGroups.other,
-      duration: NaN,
       selfTime: NaN,
     };
-
-    if (parent) {
-      parent.children.push(newTask);
-    }
 
     return newTask;
   }
 
   /**
+   *
+   * @param {TaskNode} currentTask
+   * @param {{startTime: number}} nextTask
+   * @param {PriorTaskData} priorTaskData
+   * @param {Array<LH.TraceEvent>} reverseEventsQueue
+   */
+  static _assignAllTimerInstallsBetweenTasks(
+    currentTask,
+    nextTask,
+    priorTaskData,
+    reverseEventsQueue
+  ) {
+    while (true) {
+      const nextTimerInstallEvent = reverseEventsQueue.pop();
+      // We're out of events to look at; we're done.
+      if (!nextTimerInstallEvent) break;
+
+      // Timer event is after our current task; push it back on for next time, and we're done.
+      if (nextTimerInstallEvent.ts > Math.min(nextTask.startTime, currentTask.endTime)) {
+        reverseEventsQueue.push(nextTimerInstallEvent);
+        break;
+      }
+
+      // Timer event is before the current task, just skip it.
+      if (nextTimerInstallEvent.ts < currentTask.startTime) {
+        continue;
+      }
+
+      // We're right where we need to be, point the timerId to our `currentTask`
+      /** @type {string} */
+      // @ts-ignore - timerId exists on `TimerInstall` events.
+      const timerId = nextTimerInstallEvent.args.data.timerId;
+      priorTaskData.timers.set(timerId, currentTask);
+    }
+  }
+  /**
+   * @param {LH.TraceEvent[]} taskStartEvents
+   * @param {LH.TraceEvent[]} taskEndEvents
+   * @param {number} traceEndTs
+   * @return {TaskNode[]}
+   */
+  static _createTasksFromStartAndEndEvents(taskStartEvents, taskEndEvents, traceEndTs) {
+    /** @type {TaskNode[]} */
+    const tasks = [];
+    // Create a reversed copy of the array to avoid copying the rest of the queue on every mutation.
+    const taskEndEventsReverseQueue = taskEndEvents.slice().reverse();
+
+    for (const taskStartEvent of taskStartEvents) {
+      if (taskStartEvent.ph === 'X') {
+        // Task is a complete X event, we have all the information we need already.
+        tasks.push(MainThreadTasks._createNewTaskNode(taskStartEvent));
+        continue;
+      }
+
+      // Task is a B/E event pair, we need to find the E event.
+      let matchedEventIndex = -1;
+      for (let i = taskEndEventsReverseQueue.length - 1; i >= 0; i--) {
+        const endEvent = taskEndEventsReverseQueue[i];
+        if (endEvent.name !== taskStartEvent.name) continue;
+        if (endEvent.ts < taskStartEvent.ts) continue;
+
+        matchedEventIndex = i;
+        break;
+      }
+
+      /** @type {Pick<LH.TraceEvent, 'ph'|'ts'>} */
+      let taskEndEvent;
+      if (matchedEventIndex === -1) {
+        // If we couldn't find an end event, we'll assume it's the end of the trace.
+        // If this creates invalid parent/child relationships it will be caught in the next step.
+        taskEndEvent = {ph: 'E', ts: traceEndTs};
+      } else if (matchedEventIndex === taskEndEventsReverseQueue.length - 1) {
+        // Use .pop() in the common case where the immediately next event is needed.
+        // It's ~25x faster, https://jsperf.com/pop-vs-splice.
+        taskEndEvent = /** @type {LH.TraceEvent} */ (taskEndEventsReverseQueue.pop());
+      } else {
+        taskEndEvent = taskEndEventsReverseQueue.splice(matchedEventIndex, 1)[0];
+      }
+
+      tasks.push(MainThreadTasks._createNewTaskNode(taskStartEvent, taskEndEvent));
+    }
+
+    if (taskEndEventsReverseQueue.length) {
+      throw new Error(
+        `Fatal trace logic error - ${taskEndEventsReverseQueue.length} unmatched E events`
+      );
+    }
+
+    return tasks;
+  }
+
+  /**
+   *
+   * @param {TaskNode[]} sortedTasks
+   * @param {LH.TraceEvent[]} timerInstallEvents
+   * @param {PriorTaskData} priorTaskData
+   */
+  static _createTaskRelationships(sortedTasks, timerInstallEvents, priorTaskData) {
+    /** @type {TaskNode|undefined} */
+    let currentTask;
+    // Create a reversed copy of the array to avoid copying the rest of the queue on every mutation.
+    const timerInstallEventsReverseQueue = timerInstallEvents.slice().reverse();
+
+    for (let i = 0; i < sortedTasks.length; i++) {
+      const nextTask = sortedTasks[i];
+
+      // Update `currentTask` based on the elapsed time.
+      // The `nextTask` may be after currentTask has ended.
+      while (
+        currentTask &&
+        Number.isFinite(currentTask.endTime) &&
+        currentTask.endTime <= nextTask.startTime
+      ) {
+        MainThreadTasks._assignAllTimerInstallsBetweenTasks(
+          currentTask,
+          nextTask,
+          priorTaskData,
+          timerInstallEventsReverseQueue
+        );
+        currentTask = currentTask.parent;
+      }
+
+      if (currentTask) {
+        if (nextTask.endTime > currentTask.endTime) {
+          throw new Error('Fatal trace logic error - child cannot end after parent');
+        }
+
+        // We're currently in the middle of a task, so `nextTask` is a child.
+        nextTask.parent = currentTask;
+        currentTask.children.push(nextTask);
+        MainThreadTasks._assignAllTimerInstallsBetweenTasks(
+          currentTask,
+          nextTask,
+          priorTaskData,
+          timerInstallEventsReverseQueue
+        );
+      } else {
+        // We're not currently in the middle of a task, so `nextTask` is a toplevel task.
+        // Nothing really to do here.
+      }
+
+      currentTask = nextTask;
+    }
+
+    if (currentTask) {
+      MainThreadTasks._assignAllTimerInstallsBetweenTasks(
+        currentTask,
+        {startTime: Infinity},
+        priorTaskData,
+        timerInstallEventsReverseQueue
+      );
+    }
+  }
+
+  /**
+   * This function takes the raw trace events sorted in increasing timestamp order and outputs connected task nodes.
+   * To create the task heirarchy we make several passes over the events.
+   *
+   *    1. Create three arrays of X/B events, E events, and TimerInstall events.
+   *    2. Create tasks for each X/B event, throwing if a matching E event cannot be found for a given B.
+   *    3. Sort the tasks by ↑ startTime, ↓ duration.
+   *    4. Match each task to its parent, throwing if there is any invalid overlap between tasks.
+   *
    * @param {LH.TraceEvent[]} mainThreadEvents
    * @param {PriorTaskData} priorTaskData
    * @param {number} traceEndTs
    * @return {TaskNode[]}
    */
   static _createTasksFromEvents(mainThreadEvents, priorTaskData, traceEndTs) {
-    /** @type {TaskNode[]} */
-    const tasks = [];
-    /** @type {TaskNode|undefined} */
-    let currentTask;
+    /** @type {Array<LH.TraceEvent>} */
+    const taskStartEvents = [];
+    /** @type {Array<LH.TraceEvent>} */
+    const taskEndEvents = [];
+    /** @type {Array<LH.TraceEvent>} */
+    const timerInstallEvents = [];
 
+    // Phase 1 - Create three arrays of X/B events, E events, and TimerInstall events.
     for (const event of mainThreadEvents) {
-      // Save the timer data, TimerInstall events are instant events `ph === 'I'` so process them first.
-      if (event.name === 'TimerInstall' && currentTask) {
-        /** @type {string} */
-        // @ts-ignore - timerId exists when name is TimerInstall
-        const timerId = event.args.data.timerId;
-        priorTaskData.timers.set(timerId, currentTask);
-      }
-
-      // Only look at X (Complete), B (Begin), and E (End) events as they have most data
-      if (event.ph !== 'X' && event.ph !== 'B' && event.ph !== 'E') continue;
-
-      // Update currentTask based on the elapsed time.
-      // The next event may be after currentTask has ended.
-      while (
-        currentTask &&
-        Number.isFinite(currentTask.endTime) &&
-        currentTask.endTime <= event.ts
-      ) {
-        currentTask = currentTask.parent;
-      }
-
-      // If we don't have a current task, start a new one.
-      if (!currentTask) {
-        // We can't start a task with an end event
-        if (event.ph === 'E') {
-          throw new Error('Fatal trace logic error - unexpected end event');
-        }
-
-        currentTask = MainThreadTasks._createNewTaskNode(event);
-        tasks.push(currentTask);
-
-        continue;
-      }
-
-      if (event.ph === 'X' || event.ph === 'B') {
-        // We're starting a nested event, create it as a child and make it the currentTask
-        const newTask = MainThreadTasks._createNewTaskNode(event, currentTask);
-        tasks.push(newTask);
-        currentTask = newTask;
-      } else {
-        if (currentTask.event.ph !== 'B') {
-          throw new Error(
-            `Fatal trace logic error - expected start event, got ${currentTask.event.ph}`);
-        }
-
-        // We're ending an event, update the end time and the currentTask to its parent
-        currentTask.endTime = event.ts;
-        currentTask = currentTask.parent;
-      }
+      if (event.ph === 'X' || event.ph === 'B') taskStartEvents.push(event);
+      if (event.ph === 'E') taskEndEvents.push(event);
+      if (event.name === 'TimerInstall') timerInstallEvents.push(event);
     }
 
-    // Starting from the last and bottom-most task, we finish any tasks that didn't end yet.
-    while (currentTask && !Number.isFinite(currentTask.endTime)) {
-      // The last event didn't finish before tracing stopped, use traceEnd timestamp instead.
-      currentTask.endTime = traceEndTs;
-      currentTask = currentTask.parent;
-    }
+    // Phase 2 - Create tasks for each taskStartEvent.
+    const tasks = MainThreadTasks._createTasksFromStartAndEndEvents(
+      taskStartEvents,
+      taskEndEvents,
+      traceEndTs
+    );
 
-    // At this point we expect all tasks to have a finite startTime and endTime.
-    return tasks;
+    // Phase 3 - Sort the tasks by increasing startTime, decreasing duration.
+    const sortedTasks = tasks.sort(
+      (taskA, taskB) => taskA.startTime - taskB.startTime || taskB.duration - taskA.duration
+    );
+
+    // Phase 4 - Match each task to its parent.
+    MainThreadTasks._createTaskRelationships(sortedTasks, timerInstallEvents, priorTaskData);
+
+    return sortedTasks;
   }
 
   /**
@@ -157,7 +289,6 @@ class MainThreadTasks {
     const childTime = task.children
       .map(child => MainThreadTasks._computeRecursiveSelfTime(child, task))
       .reduce((sum, child) => sum + child, 0);
-    task.duration = task.endTime - task.startTime;
     task.selfTime = task.duration - childTime;
     return task.duration;
   }
@@ -213,7 +344,8 @@ class MainThreadTasks {
 
     task.attributableURLs = attributableURLs;
     task.children.forEach(child =>
-      MainThreadTasks._computeRecursiveAttributableURLs(child, attributableURLs, priorTaskData));
+      MainThreadTasks._computeRecursiveAttributableURLs(child, attributableURLs, priorTaskData)
+    );
   }
 
   /**
