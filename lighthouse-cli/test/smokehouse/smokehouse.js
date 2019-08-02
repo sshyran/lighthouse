@@ -9,7 +9,6 @@
 /* eslint-disable no-console */
 
 const fs = require('fs');
-const path = require('path');
 const spawnSync = require('child_process').spawnSync;
 const yargs = require('yargs');
 const log = require('lighthouse-logger');

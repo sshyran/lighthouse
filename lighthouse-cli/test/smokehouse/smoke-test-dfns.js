@@ -157,7 +157,7 @@ if (typeof window === 'undefined') {
   for (const test of smokeTests) {
     // Sanity check that the path is the same as the string used in `require`;
     assert(require(test.config.path) === test.config.value);
-    
+
     test.config.path = resolveLocalOrProjectRoot(test.config.path);
     test.config.path = pathRelativeToProjectRoot(test.config.path);
   }
