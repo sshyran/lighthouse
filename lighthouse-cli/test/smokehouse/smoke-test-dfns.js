@@ -5,6 +5,7 @@
  */
 'use strict';
 
+const assert = require('assert');
 const path = require('path');
 
 /**
@@ -154,6 +155,9 @@ const smokeTests = [{
 // `smokehouse.js`. Not needed and not possible in a browser context.
 if (typeof window === 'undefined') {
   for (const test of smokeTests) {
+    // Sanity check that the path is the same as the string used in `require`;
+    assert(require(test.config.path) === test.config.value);
+    
     test.config.path = resolveLocalOrProjectRoot(test.config.path);
     test.config.path = pathRelativeToProjectRoot(test.config.path);
   }
