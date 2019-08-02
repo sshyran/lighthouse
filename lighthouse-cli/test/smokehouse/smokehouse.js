@@ -22,24 +22,6 @@ const PROTOCOL_TIMEOUT_EXIT_CODE = 67;
 const RETRIES = 3;
 
 /**
- * Attempt to resolve a path locally. If this fails, attempts to locate the path
- * relative to the current working directory.
- * @param {string} payloadPath
- * @return {string}
- */
-function resolveLocalOrCwd(payloadPath) {
-  let resolved;
-  try {
-    resolved = require.resolve('./' + payloadPath);
-  } catch (e) {
-    const cwdPath = path.resolve(process.cwd(), payloadPath);
-    resolved = require.resolve(cwdPath);
-  }
-
-  return resolved;
-}
-
-/**
  * Launch Chrome and do a full Lighthouse run.
  * @param {string} url
  * @param {string} configPath
@@ -129,25 +111,27 @@ function runLighthouse(url, configPath, isDebug) {
 const cli = yargs
   .help('help')
   .describe({
-    'config-path': 'The path to the config JSON file',
-    'expectations-path': 'The path to the expected audit results file',
+    'smoke-id': 'The id of the smoke test to run',
     'debug': 'Save the artifacts along with the output',
   })
-  .require('config-path', true)
-  .require('expectations-path', true)
+  .require('smoke-id', true)
   .argv;
 
-const configPath = resolveLocalOrCwd(cli['config-path']);
-/** @type {Smokehouse.ExpectedRunnerResult[]} */
-const expectations = require(resolveLocalOrCwd(cli['expectations-path']));
+const smokeId = cli['smoke-id'];
+const smokeTest = require('./smoke-test-dfns.js').find(smoke => smoke.id === smokeId);
+
+if (!smokeTest) {
+  process.exit(1);
+  throw new Error(`could not find smoke ${smokeId}`);
+}
 
 // Loop sequentially over expectations, comparing against Lighthouse run, and
 // reporting result.
 let passingCount = 0;
 let failingCount = 0;
-expectations.forEach(expected => {
+smokeTest.expectations.forEach(expected => {
   console.log(`Doing a run of '${expected.lhr.requestedUrl}'...`);
-  const results = runLighthouse(expected.lhr.requestedUrl, configPath, cli.debug);
+  const results = runLighthouse(expected.lhr.requestedUrl, smokeTest.config.path, cli.debug);
 
   console.log(`Asserting expected results match those found. (${expected.lhr.requestedUrl})`);
   const collated = collateResults(results, expected);

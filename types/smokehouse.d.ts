@@ -19,17 +19,28 @@
     diff?: Difference | null;
   }
 
-  export type ExpectedLHR = Pick<LH.Result, 'audits' | 'finalUrl' | 'requestedUrl' | 'runtimeError'>
+  interface ExpectedLHR {
+    audits: Record<string, any>;
+    requestedUrl: string;
+    finalUrl: string;
+    runtimeError?: {
+      code?: any;
+      message?: any;
+    };
+  }
 
   export type ExpectedRunnerResult = {
     lhr: ExpectedLHR,
-    artifacts?: Partial<LH.Artifacts>
+    artifacts?: Partial<Record<keyof LH.Artifacts, any>>
   }
 
-  export interface TestDfn {
+  export interface Test {
     id: string;
-    expectations: string;
-    config: string;
+    expectations: ExpectedRunnerResult[];
+    config: {
+      path: string;
+      value: LH.Config.Json;
+    };
     batch: string;
   }
 }

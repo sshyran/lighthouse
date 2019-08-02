@@ -6,80 +6,14 @@
 'use strict';
 
 const path = require('path');
-const smokehouseDir = 'lighthouse-cli/test/smokehouse/';
 
-/** @type {Array<Smokehouse.TestDfn>} */
-const SMOKE_TEST_DFNS = [{
-  id: 'a11y',
-  config: smokehouseDir + 'a11y/a11y-config.js',
-  expectations: 'a11y/expectations.js',
-  batch: 'parallel-first',
-}, {
-  id: 'errors',
-  expectations: smokehouseDir + 'error-expectations.js',
-  config: smokehouseDir + 'error-config.js',
-  batch: 'errors',
-}, {
-  id: 'oopif',
-  expectations: smokehouseDir + 'oopif-expectations.js',
-  config: smokehouseDir + 'oopif-config.js',
-  batch: 'parallel-first',
-}, {
-  id: 'pwa',
-  expectations: smokehouseDir + 'pwa-expectations.js',
-  config: smokehouseDir + 'pwa-config.js',
-  batch: 'parallel-second',
-}, {
-  id: 'pwa2',
-  expectations: smokehouseDir + 'pwa2-expectations.js',
-  config: smokehouseDir + 'pwa-config.js',
-  batch: 'parallel-second',
-}, {
-  id: 'pwa3',
-  expectations: smokehouseDir + 'pwa3-expectations.js',
-  config: smokehouseDir + 'pwa-config.js',
-  batch: 'parallel-first',
-}, {
-  id: 'dbw',
-  expectations: 'dobetterweb/dbw-expectations.js',
-  config: smokehouseDir + 'dbw-config.js',
-  batch: 'parallel-second',
-}, {
-  id: 'redirects',
-  expectations: 'redirects/expectations.js',
-  config: smokehouseDir + 'redirects-config.js',
-  batch: 'parallel-first',
-}, {
-  id: 'seo',
-  expectations: 'seo/expectations.js',
-  config: smokehouseDir + 'seo-config.js',
-  batch: 'parallel-first',
-}, {
-  id: 'offline',
-  expectations: 'offline-local/offline-expectations.js',
-  config: smokehouseDir + 'offline-config.js',
-  batch: 'offline',
-}, {
-  id: 'byte',
-  expectations: 'byte-efficiency/expectations.js',
-  config: smokehouseDir + 'byte-config.js',
-  batch: 'perf-opportunity',
-}, {
-  id: 'perf',
-  expectations: 'perf/expectations.js',
-  config: 'perf/perf-config.js',
-  batch: 'perf-metric',
-}, {
-  id: 'lantern',
-  expectations: 'perf/lantern-expectations.js',
-  config: smokehouseDir + 'lantern-config.js',
-  batch: 'parallel-first',
-}, {
-  id: 'metrics',
-  expectations: 'tricky-metrics/expectations.js',
-  config: 'lighthouse-core/config/perf-config.js',
-  batch: 'parallel-second',
-}];
+/**
+ * @param {string} filePath
+ */
+function pathRelativeToProjectRoot(filePath) {
+  const projectRoot = path.join(__dirname, '../../../');
+  return path.relative(projectRoot, filePath);
+}
 
 /**
  * Attempt to resolve a path relative to the smokehouse folder.
@@ -100,34 +34,129 @@ function resolveLocalOrProjectRoot(payloadPath) {
   return resolved;
 }
 
-/**
- * @param {string} configPath
- * @return {LH.Config.Json}
- */
-function loadConfig(configPath) {
-  return require(configPath);
+/** @type {Array<Smokehouse.Test>} */
+const smokeTests = [{
+  id: 'a11y',
+  expectations: require('./a11y/expectations.js'),
+  config: {
+    path: './a11y/a11y-config.js',
+    value: require('./a11y/a11y-config.js'),
+  },
+  batch: 'parallel-first',
+}, {
+  id: 'errors',
+  expectations: require('./error-expectations.js'),
+  config: {
+    path: './error-config.js',
+    value: require('./error-config.js'),
+  },
+  batch: 'errors',
+}, {
+  id: 'oopif',
+  expectations: require('./oopif-expectations.js'),
+  config: {
+    path: './oopif-config.js',
+    value: require('./oopif-config.js'),
+  },
+  batch: 'parallel-first',
+}, {
+  id: 'pwa',
+  expectations: require('./pwa-expectations.js'),
+  config: {
+    path: './pwa-config.js',
+    value: require('./pwa-config.js'),
+  },
+  batch: 'parallel-second',
+}, {
+  id: 'pwa2',
+  expectations: require('./pwa2-expectations.js'),
+  config: {
+    path: './pwa-config.js',
+    value: require('./pwa-config.js'),
+  },
+  batch: 'parallel-second',
+}, {
+  id: 'pwa3',
+  expectations: require('./pwa3-expectations.js'),
+  config: {
+    path: './pwa-config.js',
+    value: require('./pwa-config.js'),
+  },
+  batch: 'parallel-first',
+}, {
+  id: 'dbw',
+  expectations: require('./dobetterweb/dbw-expectations.js'),
+  config: {
+    path: './dbw-config.js',
+    value: require('./dbw-config.js'),
+  },
+  batch: 'parallel-second',
+}, {
+  id: 'redirects',
+  expectations: require('./redirects/expectations.js'),
+  config: {
+    path: './redirects-config.js',
+    value: require('./redirects-config.js'),
+  },
+  batch: 'parallel-first',
+}, {
+  id: 'seo',
+  expectations: require('./seo/expectations.js'),
+  config: {
+    path: './seo-config.js',
+    value: require('./seo-config.js'),
+  },
+  batch: 'parallel-first',
+}, {
+  id: 'offline',
+  expectations: require('./offline-local/offline-expectations.js'),
+  config: {
+    path: './offline-config.js',
+    value: require('./offline-config.js'),
+  },
+  batch: 'offline',
+}, {
+  id: 'byte',
+  expectations: require('./byte-efficiency/expectations.js'),
+  config: {
+    path: './byte-config.js',
+    value: require('./byte-config.js'),
+  },
+  batch: 'perf-opportunity',
+}, {
+  id: 'perf',
+  expectations: require('./perf/expectations.js'),
+  config: {
+    path: './perf/perf-config.js',
+    value: require('./perf/perf-config.js'),
+  },
+  batch: 'perf-metric',
+}, {
+  id: 'lantern',
+  expectations: require('./perf/lantern-expectations.js'),
+  config: {
+    path: './lantern-config.js',
+    value: require('./lantern-config.js'),
+  },
+  batch: 'parallel-first',
+}, {
+  id: 'metrics',
+  expectations: require('./tricky-metrics/expectations.js'),
+  config: {
+    path: '../../../lighthouse-core/config/perf-config.js',
+    value: require('../../../lighthouse-core/config/perf-config.js'),
+  },
+  batch: 'parallel-second',
+}];
+
+// Convert `config.path` from a path relative to this directory, to one relative to the project
+// root. This makes it possible to pass a path to Lighthouse via the CLI interface in
+// `smokehouse.js`. Not needed and not possible in a browser context.
+if (typeof window === 'undefined') {
+  for (const test of smokeTests) {
+    test.config.path = resolveLocalOrProjectRoot(test.config.path);
+    test.config.path = pathRelativeToProjectRoot(test.config.path);
+  }
 }
 
-/**
- * @param {string} expectationsPath
- * @return {Smokehouse.ExpectedRunnerResult[]}
- */
-function loadExpectations(expectationsPath) {
-  return require(expectationsPath);
-}
-
-function getSmokeTests() {
-  return SMOKE_TEST_DFNS.map(smokeTestDfn => {
-    return {
-      id: smokeTestDfn.id,
-      config: loadConfig(resolveLocalOrProjectRoot(smokeTestDfn.config)),
-      expectations: loadExpectations(resolveLocalOrProjectRoot(smokeTestDfn.expectations)),
-      batch: smokeTestDfn.batch,
-    };
-  });
-}
-
-module.exports = {
-  SMOKE_TEST_DFNS,
-  getSmokeTests,
-};
+module.exports = smokeTests;

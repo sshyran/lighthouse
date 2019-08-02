@@ -12,9 +12,10 @@ const NONEMPTY_ARRAY = {
 };
 
 /**
+ * @type {Array<Smokehouse.ExpectedRunnerResult>}
  * Expected Lighthouse audit values for sites with various errors.
  */
-module.exports = [
+const expectations = [
   {
     lhr: {
       requestedUrl: 'http://localhost:10200/infinite-loop.html',
@@ -60,3 +61,5 @@ module.exports = [
     },
   },
 ];
+
+module.exports = expectations;
