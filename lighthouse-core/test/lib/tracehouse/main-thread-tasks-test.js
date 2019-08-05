@@ -183,11 +183,11 @@ describe('Main Thread Tasks', () => {
     const taskD = tasks.find(task => task.event.name === 'TimerFire');
     const taskE = tasks.find(task => task.event.name === 'TaskE');
 
-    assert.deepStrictEqual(taskA.attributableURLs, []);
-    assert.deepStrictEqual(taskB.attributableURLs, ['urlB.1', 'urlB.2']);
-    assert.deepStrictEqual(taskC.attributableURLs, ['urlB.1', 'urlB.2', 'urlC']);
-    assert.deepStrictEqual(taskD.attributableURLs, ['urlB.1', 'urlB.2', 'urlC']);
-    assert.deepStrictEqual(taskE.attributableURLs, ['urlB.1', 'urlB.2', 'urlC', 'urlD']);
+    expect(taskA.attributableURLs).toEqual([]);
+    expect(taskB.attributableURLs).toEqual(['urlB.1', 'urlB.2']);
+    expect(taskC.attributableURLs).toEqual(['urlB.1', 'urlB.2', 'urlC']);
+    expect(taskD.attributableURLs).toEqual(['urlB.1', 'urlB.2', 'urlC']);
+    expect(taskE.attributableURLs).toEqual(['urlB.1', 'urlB.2', 'urlC', 'urlD']);
   });
 
   it('should handle the last trace event not ending', () => {
@@ -240,6 +240,91 @@ describe('Main Thread Tasks', () => {
       selfTime: 95,
       group: taskGroups.other,
     });
+  });
+
+  it('should handle nested events *starting* at the same timestamp correctly', () => {
+    /*
+    An artistic rendering of the below trace:
+    █████████████TaskA█████████████
+    ███████TaskB██████
+    █TaskC█
+                                   █████████████TaskD█████████████
+
+    */
+    const traceEvents = [
+      ...boilerplateTrace,
+      {ph: 'B', name: 'TaskB', pid, tid, ts: baseTs, args},
+      {ph: 'B', name: 'TaskC', pid, tid, ts: baseTs, args},
+      {ph: 'X', name: 'TaskA', pid, tid, ts: baseTs, dur: 100e3, args},
+      {ph: 'E', name: 'TaskB', pid, tid, ts: baseTs + 50e3, args},
+      {ph: 'E', name: 'TaskC', pid, tid, ts: baseTs + 25e3, args},
+      {ph: 'X', name: 'TaskD', pid, tid, ts: baseTs + 100e3, dur: 100e3, args},
+    ];
+
+    traceEvents.forEach(evt => Object.assign(evt, {cat: 'devtools.timeline'}));
+
+    const tasks = run({traceEvents});
+    expect(tasks).toMatchObject([
+      {event: {name: 'TaskA'}, parent: undefined, startTime: 0, endTime: 100},
+      {event: {name: 'TaskB'}, parent: {event: {name: 'TaskA'}}, startTime: 0, endTime: 50},
+      {event: {name: 'TaskC'}, parent: {event: {name: 'TaskB'}}, startTime: 0, endTime: 25},
+      {event: {name: 'TaskD'}, parent: undefined, startTime: 100, endTime: 200},
+    ]);
+  });
+
+  it('should handle nested events *ending* at the same timestamp correctly', () => {
+    /*
+    An artistic rendering of the below trace:
+    █████████████████████████████TaskA████████████|
+      ████████████████████TaskB███████████████████|
+                                            █TaskC|
+                                                  ^ trace abruptly ended
+    */
+    const traceEvents = [
+      ...boilerplateTrace,
+      {ph: 'B', name: 'TaskA', pid, tid, ts: baseTs, args},
+      {ph: 'X', name: 'TaskB', pid, tid, ts: baseTs + 50e3, dur: 50e3, args},
+      {ph: 'B', name: 'TaskC', pid, tid, ts: baseTs + 75e3, args},
+      {ph: 'X', name: 'TaskD', pid, tid, ts: baseTs + 100e3, dur: 100e3, args},
+      {ph: 'E', name: 'TaskA', pid, tid, ts: baseTs + 100e3, args},
+      {ph: 'E', name: 'TaskC', pid, tid, ts: baseTs + 100e3, args},
+    ];
+
+    traceEvents.forEach(evt => Object.assign(evt, {cat: 'devtools.timeline'}));
+
+    const tasks = run({traceEvents});
+    expect(tasks).toMatchObject([
+      {event: {name: 'TaskA'}, parent: undefined, startTime: 0, endTime: 100},
+      {event: {name: 'TaskB'}, parent: {event: {name: 'TaskA'}}, startTime: 50, endTime: 100},
+      {event: {name: 'TaskC'}, parent: {event: {name: 'TaskB'}}, startTime: 75, endTime: 100},
+      {event: {name: 'TaskD'}, parent: undefined, startTime: 100, endTime: 200},
+    ]);
+  });
+
+  it('should handle nested events of the same name', () => {
+    /*
+    An artistic rendering of the below trace:
+    █████████████████████████████TaskANested██████████████████████████████████████████████
+    ████████████████TaskB███████████████████
+               ████TaskANested██████
+    */
+    const traceEvents = [
+      ...boilerplateTrace,
+      {ph: 'B', name: 'TaskANested', pid, tid, ts: baseTs, args},
+      {ph: 'X', name: 'TaskB', pid, tid, ts: baseTs, dur: 50e3, args},
+      {ph: 'B', name: 'TaskANested', pid, tid, ts: baseTs + 25e3, args},
+      {ph: 'E', name: 'TaskANested', pid, tid, ts: baseTs + 45e3, args},
+      {ph: 'E', name: 'TaskANested', pid, tid, ts: baseTs + 100e3, args},
+    ];
+
+    traceEvents.forEach(evt => Object.assign(evt, {cat: 'devtools.timeline'}));
+
+    const tasks = run({traceEvents});
+    expect(tasks).toMatchObject([
+      {event: {name: 'TaskANested'}, parent: undefined, startTime: 0, endTime: 100},
+      {event: {name: 'TaskB'}, parent: {event: {name: 'TaskANested'}}, startTime: 0, endTime: 50},
+      {event: {name: 'TaskANested'}, parent: {event: {name: 'TaskB'}}, startTime: 25, endTime: 45},
+    ]);
   });
 
   it('should handle incorrectly sorted events at task start', () => {
@@ -303,77 +388,6 @@ describe('Main Thread Tasks', () => {
     traceEvents.forEach(evt => Object.assign(evt, {cat: 'devtools.timeline'}));
 
     const tasks = run({traceEvents});
-    expect(tasks).toMatchObject([
-      {event: {name: 'TaskA'}, parent: undefined, startTime: 0, endTime: 100},
-      {event: {name: 'TaskB'}, parent: {event: {name: 'TaskA'}}, startTime: 0, endTime: 50},
-      {event: {name: 'TaskC'}, parent: {event: {name: 'TaskB'}}, startTime: 0, endTime: 25},
-      {event: {name: 'TaskD'}, parent: undefined, startTime: 100, endTime: 200},
-    ]);
-  });
-
-  it('should handle nested events *ending* at the same timestamp correctly', () => {
-    const traceEvents = [
-      ...boilerplateTrace,
-      {ph: 'B', name: 'TaskA', pid, tid, ts: baseTs, args},
-      {ph: 'X', name: 'TaskB', pid, tid, ts: baseTs + 50e3, dur: 50e3, args},
-      {ph: 'B', name: 'TaskC', pid, tid, ts: baseTs + 75e3, args},
-      {ph: 'X', name: 'TaskD', pid, tid, ts: baseTs + 100e3, dur: 100e3, args},
-      {ph: 'E', name: 'TaskA', pid, tid, ts: baseTs + 100e3, args},
-      {ph: 'E', name: 'TaskC', pid, tid, ts: baseTs + 100e3, args},
-    ];
-
-    traceEvents.forEach(evt => Object.assign(evt, {cat: 'devtools.timeline'}));
-
-    const tasks = run({traceEvents});
-    expect(tasks).toMatchObject([
-      {event: {name: 'TaskA'}, parent: undefined, startTime: 0, endTime: 100},
-      {event: {name: 'TaskB'}, parent: {event: {name: 'TaskA'}}, startTime: 50, endTime: 100},
-      {event: {name: 'TaskC'}, parent: {event: {name: 'TaskB'}}, startTime: 75, endTime: 100},
-      {event: {name: 'TaskD'}, parent: undefined, startTime: 100, endTime: 200},
-    ]);
-  });
-
-  it('should handle nested events of the same name', () => {
-    /*
-    An artistic rendering of the below trace:
-    █████████████████████████████TaskANested██████████████████████████████████████████████
-    ████████████████TaskB███████████████████
-               ████TaskANested██████
-    */
-    const traceEvents = [
-      ...boilerplateTrace,
-      {ph: 'B', name: 'TaskANested', pid, tid, ts: baseTs, args},
-      {ph: 'X', name: 'TaskB', pid, tid, ts: baseTs, dur: 50e3, args},
-      {ph: 'B', name: 'TaskANested', pid, tid, ts: baseTs + 25e3, args},
-      {ph: 'E', name: 'TaskANested', pid, tid, ts: baseTs + 45e3, args},
-      {ph: 'E', name: 'TaskANested', pid, tid, ts: baseTs + 100e3, args},
-    ];
-
-    traceEvents.forEach(evt => Object.assign(evt, {cat: 'devtools.timeline'}));
-
-    const tasks = run({traceEvents});
-    expect(tasks).toMatchObject([
-      {event: {name: 'TaskANested'}, parent: undefined, startTime: 0, endTime: 100},
-      {event: {name: 'TaskB'}, parent: {event: {name: 'TaskANested'}}, startTime: 0, endTime: 50},
-      {event: {name: 'TaskANested'}, parent: {event: {name: 'TaskB'}}, startTime: 25, endTime: 45},
-    ]);
-  });
-
-  it('should handle nested events *starting* at the same timestamp correctly', () => {
-    const traceEvents = [
-      ...boilerplateTrace,
-      {ph: 'B', name: 'TaskB', pid, tid, ts: baseTs, args},
-      {ph: 'B', name: 'TaskC', pid, tid, ts: baseTs, args},
-      {ph: 'X', name: 'TaskA', pid, tid, ts: baseTs, dur: 100e3, args},
-      {ph: 'E', name: 'TaskB', pid, tid, ts: baseTs + 50e3, args},
-      {ph: 'E', name: 'TaskC', pid, tid, ts: baseTs + 25e3, args},
-      {ph: 'X', name: 'TaskD', pid, tid, ts: baseTs + 100e3, dur: 100e3, args},
-    ];
-
-    traceEvents.forEach(evt => Object.assign(evt, {cat: 'devtools.timeline'}));
-
-    const tasks = run({traceEvents});
-    const [taskA, taskB] = tasks;
     expect(tasks).toEqual([
       {
         parent: undefined,
