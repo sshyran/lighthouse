@@ -222,7 +222,16 @@ class MainThreadTasks {
 
       if (currentTask) {
         if (nextTask.endTime > currentTask.endTime) {
-          throw new Error('Fatal trace logic error - child cannot end after parent');
+          const timeDelta = nextTask.endTime - currentTask.endTime;
+          // The child task is taking longer than the parent task, which should be impossible.
+          //    If it's less than 1ms, we'll let it slide.
+          //    If it's more, throw an error.
+          if (timeDelta < 1000) {
+            currentTask.endTime = nextTask.endTime;
+            currentTask.duration += timeDelta;
+          } else {
+            throw new Error('Fatal trace logic error - child cannot end after parent');
+          }
         }
 
         // We're currently in the middle of a task, so `nextTask` is a child.

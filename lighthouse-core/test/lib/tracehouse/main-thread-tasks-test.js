@@ -11,6 +11,7 @@ const MainThreadTasks = require('../../../lib/tracehouse/main-thread-tasks.js');
 const TraceProcessor = require('../../../lib/tracehouse/trace-processor.js');
 const taskGroups = require('../../../lib/tracehouse/task-groups.js').taskGroups;
 const pwaTrace = require('../../fixtures/traces/progressive-app.json');
+const noTracingStartedTrace = require('../../fixtures/traces/no-tracingstarted-m74.json');
 const TracingProcessor = require('../../../lib/tracehouse/trace-processor.js');
 const assert = require('assert');
 
@@ -57,6 +58,11 @@ describe('Main Thread Tasks', () => {
     assert.equal(allTasks.length, 2305);
     assert.equal(Math.round(totalTopLevelTime), 386);
     assert.equal(Math.round(totalTime), 396);
+  });
+
+  it('should handle slightly trace events that slightly overlap', () => {
+    const tasks = run(noTracingStartedTrace);
+    expect(tasks).toHaveLength(425);
   });
 
   it('should compute parent/child correctly', () => {
@@ -416,6 +422,52 @@ describe('Main Thread Tasks', () => {
     ]);
   });
 
+  it('should handle child events that extend <1ms beyond parent event', () => {
+    /*
+    An artistic rendering of the below trace:
+    ████████████████TaskA██████████████████
+            █████████TaskB██████████████████
+    */
+    const traceEvents = [
+      ...boilerplateTrace,
+      {ph: 'B', name: 'TaskA', pid, tid, ts: baseTs, args},
+      {ph: 'B', name: 'TaskB', pid, tid, ts: baseTs + 25e3, args},
+      {ph: 'E', name: 'TaskA', pid, tid, ts: baseTs + 100e3 - 50, args}, // this is invalid, but happens in practice
+      {ph: 'E', name: 'TaskB', pid, tid, ts: baseTs + 100e3, args},
+    ];
+
+    traceEvents.forEach(evt => Object.assign(evt, {cat: 'devtools.timeline'}));
+
+    const tasks = run({traceEvents});
+    const [taskA, taskB] = tasks;
+    expect(tasks).toEqual([
+      {
+        parent: undefined,
+        attributableURLs: [],
+
+        children: [taskB],
+        event: traceEvents.find(event => event.name === 'TaskA'),
+        startTime: 0,
+        endTime: 100,
+        duration: 100,
+        selfTime: 25,
+        group: taskGroups.other,
+      },
+      {
+        parent: taskA,
+        attributableURLs: [],
+
+        children: [],
+        event: traceEvents.find(event => event.name === 'TaskB' && event.ph === 'B'),
+        startTime: 25,
+        endTime: 100,
+        duration: 75,
+        selfTime: 75,
+        group: taskGroups.other,
+      },
+    ]);
+  });
+
   const invalidEventSets = [
     [
       // TaskA overlaps with TaskB, X first
@@ -428,6 +480,13 @@ describe('Main Thread Tasks', () => {
       {ph: 'B', name: 'TaskA', pid, tid, ts: baseTs, args},
       {ph: 'X', name: 'TaskB', pid, tid, ts: baseTs + 5e3, dur: 100e3, args},
       {ph: 'E', name: 'TaskA', pid, tid, ts: baseTs + 90e3, args},
+    ],
+    [
+      // TaskA overlaps with TaskB, both B/E
+      {ph: 'B', name: 'TaskA', pid, tid, ts: baseTs, args},
+      {ph: 'B', name: 'TaskB', pid, tid, ts: baseTs + 5e3, args},
+      {ph: 'E', name: 'TaskA', pid, tid, ts: baseTs + 90e3, args},
+      {ph: 'E', name: 'TaskB', pid, tid, ts: baseTs + 95e3, args},
     ],
     [
       // TaskA is missing a B event
