@@ -122,21 +122,44 @@ class MainThreadTasks {
     // Create a reversed copy of the array to avoid copying the rest of the queue on every mutation.
     const taskEndEventsReverseQueue = taskEndEvents.slice().reverse();
 
-    for (const taskStartEvent of taskStartEvents) {
+    for (let i = 0; i < taskStartEvents.length; i++) {
+      const taskStartEvent = taskStartEvents[i];
       if (taskStartEvent.ph === 'X') {
         // Task is a complete X event, we have all the information we need already.
         tasks.push(MainThreadTasks._createNewTaskNode(taskStartEvent));
         continue;
       }
 
-      // Task is a B/E event pair, we need to find the E event.
+      // Task is a B/E event pair, we need to find the matching E event.
       let matchedEventIndex = -1;
-      for (let i = taskEndEventsReverseQueue.length - 1; i >= 0; i--) {
-        const endEvent = taskEndEventsReverseQueue[i];
+      let matchingNestedEventCount = 0;
+      let matchingNestedEventIndex = i + 1;
+      for (let j = taskEndEventsReverseQueue.length - 1; j >= 0; j--) {
+        const endEvent = taskEndEventsReverseQueue[j];
+        // We are considering an end event, so we'll count how many nested events we saw along the way.
+        while (matchingNestedEventIndex < taskStartEvents.length &&
+              taskStartEvents[matchingNestedEventIndex].ts < endEvent.ts) {
+          if (taskStartEvents[matchingNestedEventIndex].name === taskStartEvent.name) {
+            matchingNestedEventCount++;
+          }
+
+          matchingNestedEventIndex++;
+        }
+
+        // The event doesn't have a matching name, skip it.
         if (endEvent.name !== taskStartEvent.name) continue;
+        // The event has a timestamp that is too early, skip it.
         if (endEvent.ts < taskStartEvent.ts) continue;
 
-        matchedEventIndex = i;
+        // The event matches our name and happened after start, the last thing to check is if it was for a nested event.
+        if (matchingNestedEventCount > 0) {
+          // If it was for a nested event, decrement our counter and move on.
+          matchingNestedEventCount--;
+          continue;
+        }
+
+        // If it wasn't, we found our matching E event! Mark the index and stop the loop.
+        matchedEventIndex = j;
         break;
       }
 
