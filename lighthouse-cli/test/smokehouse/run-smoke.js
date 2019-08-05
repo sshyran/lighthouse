@@ -33,14 +33,14 @@ function displaySmokehouseOutput(result) {
 }
 
 /**
- * Run smokehouse in child processes for selected smoketests
+ * Run smokehouse in child processes for the selected smoke tests
  * Display output from each as soon as they finish, but resolve function when ALL are complete
- * @param {Array<Smokehouse.Test>} smokes
+ * @param {Array<Smokehouse.Test>} smokeTests
  * @return {Promise<Array<{id: string, error?: Error}>>}
  */
-async function runSmokehouse(smokes) {
+async function runSmokehouse(smokeTests) {
   const cmdPromises = [];
-  for (const {id} of smokes) {
+  for (const {id} of smokeTests) {
     console.log(`${purpleify(id)} smoketest starting…`);
     console.time(`smoketest-${id}`);
     const cmd = [

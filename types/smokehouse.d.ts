@@ -37,10 +37,7 @@
   export interface Test {
     id: string;
     expectations: ExpectedRunnerResult[];
-    config: {
-      path: string;
-      value: LH.Config.Json;
-    };
+    config: LH.Config.Json;
     batch: string;
   }
 }

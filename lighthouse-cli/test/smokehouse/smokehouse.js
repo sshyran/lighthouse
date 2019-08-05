@@ -124,13 +124,16 @@ if (!smokeTest) {
   throw new Error(`could not find smoke ${smokeId}`);
 }
 
+const configPath = `./.tmp/smoke-config-${smokeTest.id}.json`;
+fs.writeFileSync(configPath, JSON.stringify(smokeTest.config));
+
 // Loop sequentially over expectations, comparing against Lighthouse run, and
 // reporting result.
 let passingCount = 0;
 let failingCount = 0;
 smokeTest.expectations.forEach(expected => {
   console.log(`Doing a run of '${expected.lhr.requestedUrl}'...`);
-  const results = runLighthouse(expected.lhr.requestedUrl, smokeTest.config.path, cli.debug);
+  const results = runLighthouse(expected.lhr.requestedUrl, configPath, cli.debug);
 
   console.log(`Asserting expected results match those found. (${expected.lhr.requestedUrl})`);
   const collated = collateResults(results, expected);
