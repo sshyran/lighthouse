@@ -82,12 +82,12 @@ class MainThreadTasks {
    * @param {Array<LH.TraceEvent>} reverseEventsQueue
    */
   static _assignAllTimerInstallsBetweenTasks(
-    currentTask,
-    nextTask,
-    priorTaskData,
-    reverseEventsQueue
+      currentTask,
+      nextTask,
+      priorTaskData,
+      reverseEventsQueue
   ) {
-    while (true) {
+    while (reverseEventsQueue.length) {
       const nextTimerInstallEvent = reverseEventsQueue.pop();
       // We're out of events to look at; we're done.
       if (!nextTimerInstallEvent) break;
