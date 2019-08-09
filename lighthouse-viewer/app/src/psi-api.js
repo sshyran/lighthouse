@@ -27,20 +27,18 @@ class PSIApi {
    */
   callPSI(url, categories) {
     const psiUrl = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
-    /** @type {Record<string, string | string[]>} */
     const params = {
       key: PSI_KEY,
       url,
-      category: categories || PSI_DEFAULT_CATEGORIES,
       strategy: 'mobile',
       utm_source: 'Lighthouse Chrome Extension',
     };
     Object.entries(params).forEach(([key, value]) => {
-      const values = Array.isArray(value) ? value : [value];
-      for (const singleValue of values) {
-        psiUrl.searchParams.append(key, singleValue);
-      }
+      psiUrl.searchParams.append(key, value);
     });
+    for (const category of (categories || PSI_DEFAULT_CATEGORIES)) {
+      psiUrl.searchParams.append('category', category);
+    }
 
     return fetch(psiUrl.href).then(res => res.json());
   }
