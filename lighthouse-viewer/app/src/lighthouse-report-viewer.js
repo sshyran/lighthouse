@@ -23,6 +23,40 @@ function find(query, context) {
   return result;
 }
 
+/** @typedef {{lighthouseResult: LH.Result}} PSIResponse */
+
+const PSI_KEY = 'AIzaSyAjcDRNN9CX9dCazhqI4lGR7yyQbkd_oYE';
+
+/**
+ * @param {string} url
+ * @return {Promise<PSIResponse>}
+ */
+function callPSI(url) {
+  const psiUrl = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
+  /** @type {Record<string, string | string[]>} */
+  const params = {
+    key: PSI_KEY,
+    url,
+    category: [
+      'performance',
+      'accessibility',
+      'seo',
+      'best-practices',
+      'pwa',
+    ],
+    strategy: 'mobile',
+    utm_source: 'Lighthouse Chrome Extension',
+  };
+  Object.entries(params).forEach(([key, value]) => {
+    const values = Array.isArray(value) ? value : [value];
+    for (const singleValue of values) {
+      psiUrl.searchParams.append(key, singleValue);
+    }
+  });
+
+  return fetch(psiUrl.href).then(res => res.json());
+}
+
 /**
  * Class that manages viewing Lighthouse reports.
  */
@@ -42,9 +76,17 @@ class LighthouseReportViewer {
      */
     this._reportIsFromGist = false;
 
-    this._addEventListeners();
-    this._loadFromDeepLink();
-    this._listenForMessages();
+    this._reportIsFromPSI = false;
+
+    const params = new URLSearchParams(location.search);
+    const url = params.get('url');
+    if (url) {
+      this._loadFromPSI(url);
+    } else {
+      this._addEventListeners();
+      this._loadFromDeepLink();
+      this._listenForMessages();
+    }
   }
 
   static get APP_URL() {
@@ -159,9 +201,9 @@ class LighthouseReportViewer {
       renderer.renderReport(json, container);
 
       // Only give gist-saving callback (and clear gist from query string) if
-      // current report isn't from a gist.
+      // current report isn't from a gist or PSI.
       let saveCallback = null;
-      if (!this._reportIsFromGist) {
+      if (!this._reportIsFromGist && !this._reportIsFromPSI) {
         saveCallback = this._onSaveJson;
         history.pushState({}, '', LighthouseReportViewer.APP_URL);
       }
@@ -202,7 +244,7 @@ class LighthouseReportViewer {
       } catch (e) {
         throw new Error('Could not parse JSON file.');
       }
-      this._reportIsFromGist = false;
+      this._reportIsFromGist = this._reportIsFromPSI = false;
       this._replaceReportHtml(json);
     }).catch(err => logger.error(err.message));
   }
@@ -276,7 +318,6 @@ class LighthouseReportViewer {
    * @private
    */
   _onPaste(e) {
-    if (!e.clipboardData) return;
     e.preventDefault();
 
     // Try paste as gist URL.
@@ -294,7 +335,7 @@ class LighthouseReportViewer {
     // Try paste as json content.
     try {
       const json = JSON.parse(e.clipboardData.getData('text'));
-      this._reportIsFromGist = false;
+      this._reportIsFromGist = this._reportIsFromPSI = false;
       this._replaceReportHtml(json);
 
       if (window.ga) {
@@ -358,7 +399,7 @@ class LighthouseReportViewer {
   _listenForMessages() {
     window.addEventListener('message', e => {
       if (e.source === self.opener && e.data.lhresults) {
-        this._reportIsFromGist = false;
+        this._reportIsFromGist = this._reportIsFromPSI = false;
         this._replaceReportHtml(e.data.lhresults);
 
         if (self.opener && !self.opener.closed) {
@@ -374,6 +415,22 @@ class LighthouseReportViewer {
     if (self.opener && !self.opener.closed) {
       self.opener.postMessage({opened: true}, '*');
     }
+  }
+
+  /**
+   * @param {string} url
+   */
+  _loadFromPSI(url) {
+    const loadingOverlayEl = document.createElement('div');
+    loadingOverlayEl.classList.add('lh-loading-overlay');
+    loadingOverlayEl.textContent = 'Waiting for Lighthouse results ...';
+    find('.viewer-placeholder-inner', document.body).classList.add('lh-loading');
+    document.body.appendChild(loadingOverlayEl);
+    callPSI(url).then(psiResponse => {
+      this._reportIsFromPSI = true;
+      loadingOverlayEl.remove();
+      this._replaceReportHtml(psiResponse.lighthouseResult);
+    });
   }
 }
 
