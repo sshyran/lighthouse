@@ -20,3 +20,11 @@ yarn deploy-viewer
 ```
 
 For more information on deployment, see `releasing.md`.
+
+## PSI
+
+```
+http://localhost:8000/?url=https://www.example.com&category=pwa&category=seo
+```
+
+Other options: `locale`, `strategy`, `utm_source`
