@@ -175,19 +175,15 @@ describe('Lighthouse Viewer', () => {
       const interceptedRequest = await onApiRequestInterception;
       const interceptedUrl = new URL(interceptedRequest.url());
       expect(interceptedUrl.origin + interceptedUrl.pathname).toEqual('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
-      expect({
-        url: interceptedUrl.searchParams.get('url'),
-        category: interceptedUrl.searchParams.getAll('category'),
-      }).toEqual({
-        url: 'https://www.example.com',
-        category: [
-          'performance',
-          'accessibility',
-          'seo',
-          'best-practices',
-          'pwa',
-        ],
-      });
+      expect(interceptedUrl.searchParams.get('url')).toEqual('https://www.example.com');
+      expect(interceptedUrl.searchParams.getAll('category')).toEqual([
+        'performance',
+        'accessibility',
+        'seo',
+        'best-practices',
+        'pwa',
+      ]);
+
       const psiResponse = {
         lighthouseResult: JSON.parse(fs.readFileSync(sampleLhr, 'utf-8')),
       };
@@ -219,16 +215,11 @@ describe('Lighthouse Viewer', () => {
       const interceptedRequest = await onApiRequestInterception;
       const interceptedUrl = new URL(interceptedRequest.url());
       expect(interceptedUrl.origin + interceptedUrl.pathname).toEqual('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
-      expect({
-        url: interceptedUrl.searchParams.get('url'),
-        category: interceptedUrl.searchParams.getAll('category'),
-      }).toEqual({
-        url: 'https://www.example.com',
-        category: [
-          'seo',
-          'pwa',
-        ],
-      });
+      expect(interceptedUrl.searchParams.get('url')).toEqual('https://www.example.com');
+      expect(interceptedUrl.searchParams.getAll('category')).toEqual([
+        'seo',
+        'pwa',
+      ]);
 
       // Just wanted to check the params are correct, let's abort. Previous test does more of an end-to-end test.
       interceptedRequest.abort();
