@@ -48,8 +48,13 @@ class LighthouseReportViewer {
     const params = new URLSearchParams(location.search);
     const url = params.get('url');
     if (url) {
-      const categories = params.has('category') ? params.getAll('category') : null;
-      this._loadFromPSI(url, categories);
+      this._loadFromPSI({
+        url,
+        category: params.has('category') ? params.getAll('category') : undefined,
+        strategy: params.get('strategy') || undefined,
+        locale: params.get('locale') || undefined,
+        utm_source: params.get('utm_source') || undefined,
+      });
     } else {
       this._addEventListeners();
       this._loadFromDeepLink();
@@ -390,16 +395,15 @@ class LighthouseReportViewer {
   }
 
   /**
-   * @param {string} url
-   * @param {?string[]} categories
+   * @param {PSIParams} params
    */
-  _loadFromPSI(url, categories) {
+  _loadFromPSI(params) {
     const loadingOverlayEl = document.createElement('div');
     loadingOverlayEl.classList.add('lh-loading-overlay');
     loadingOverlayEl.textContent = 'Waiting for Lighthouse results ...';
     find('.viewer-placeholder-inner', document.body).classList.add('lh-loading');
     document.body.appendChild(loadingOverlayEl);
-    this._psi.callPSI(url, categories).then(response => {
+    this._psi.callPSI(params).then(response => {
       this._reportIsFromPSI = true;
       loadingOverlayEl.remove();
       this._replaceReportHtml(response.lighthouseResult);

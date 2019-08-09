@@ -7,6 +7,7 @@
 
 /** @typedef {{lighthouseResult: LH.Result}} PSIResponse */
 
+const PSI_URL = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
 const PSI_KEY = 'AIzaSyAjcDRNN9CX9dCazhqI4lGR7yyQbkd_oYE';
 const PSI_DEFAULT_CATEGORIES = [
   'performance',
@@ -21,26 +22,25 @@ const PSI_DEFAULT_CATEGORIES = [
  */
 class PSIApi {
   /**
-   * @param {string} url
-   * @param {?string[]} categories
+   * @param {PSIParams} params
    * @return {Promise<PSIResponse>}
    */
-  callPSI(url, categories) {
-    const psiUrl = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
-    const params = {
+  callPSI(params) {
+    params = Object.assign({
       key: PSI_KEY,
-      url,
       strategy: 'mobile',
-      utm_source: 'Lighthouse Chrome Extension',
-    };
+    }, params);
+
+    const apiUrl = new URL(PSI_URL);
     Object.entries(params).forEach(([key, value]) => {
-      psiUrl.searchParams.append(key, value);
+      if (key === 'category') return;
+      if (value) apiUrl.searchParams.append(key, value);
     });
-    for (const category of (categories || PSI_DEFAULT_CATEGORIES)) {
-      psiUrl.searchParams.append('category', category);
+    for (const singleCategory of (params.category || PSI_DEFAULT_CATEGORIES)) {
+      apiUrl.searchParams.append('category', singleCategory);
     }
 
-    return fetch(psiUrl.href).then(res => res.json());
+    return fetch(apiUrl.href).then(res => res.json());
   }
 }
 
