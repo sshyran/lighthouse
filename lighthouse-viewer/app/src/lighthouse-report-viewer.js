@@ -169,10 +169,14 @@ class LighthouseReportViewer {
       renderer.renderReport(json, container);
 
       // Only give gist-saving callback (and clear gist from query string) if
-      // current report isn't from a gist or PSI.
+      // current report isn't from a gist.
       let saveCallback = null;
       if (!this._reportIsFromGist && !this._reportIsFromPSI) {
         saveCallback = this._onSaveJson;
+      }
+
+      // Only modify history if not from a gist.
+      if (!this._reportIsFromGist) {
         history.pushState({}, '', LighthouseReportViewer.APP_URL);
       }
 
