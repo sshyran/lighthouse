@@ -213,7 +213,7 @@ describe('Lighthouse Viewer', () => {
     });
 
     it('should call out to PSI with specified categoeries', async () => {
-      const url = `${viewerUrl}?url=https://www.example.com&categories=seo,pwa`;
+      const url = `${viewerUrl}?url=https://www.example.com&category=seo&category=pwa`;
       await viewerPage.goto(url);
 
       const interceptedRequest = await onApiRequestInterception;

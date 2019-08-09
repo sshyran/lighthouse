@@ -5,7 +5,7 @@
  */
 'use strict';
 
-/* global DOM, ViewerUIFeatures, ReportRenderer, DragAndDrop, GithubApi, logger, idbKeyval */
+/* global DOM, ViewerUIFeatures, ReportRenderer, DragAndDrop, GithubApi, PSIApi, logger, idbKeyval */
 
 /**
  * Guaranteed context.querySelector. Always returns an element or throws if
@@ -23,42 +23,6 @@ function find(query, context) {
   return result;
 }
 
-/** @typedef {{lighthouseResult: LH.Result}} PSIResponse */
-
-const PSI_KEY = 'AIzaSyAjcDRNN9CX9dCazhqI4lGR7yyQbkd_oYE';
-const PSI_DEFAULT_CATEGORIES = [
-  'performance',
-  'accessibility',
-  'seo',
-  'best-practices',
-  'pwa',
-];
-
-/**
- * @param {string} url
- * @param {string[]} categories
- * @return {Promise<PSIResponse>}
- */
-function callPSI(url, categories) {
-  const psiUrl = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
-  /** @type {Record<string, string | string[]>} */
-  const params = {
-    key: PSI_KEY,
-    url,
-    category: categories,
-    strategy: 'mobile',
-    utm_source: 'Lighthouse Chrome Extension',
-  };
-  Object.entries(params).forEach(([key, value]) => {
-    const values = Array.isArray(value) ? value : [value];
-    for (const singleValue of values) {
-      psiUrl.searchParams.append(key, singleValue);
-    }
-  });
-
-  return fetch(psiUrl.href).then(res => res.json());
-}
-
 /**
  * Class that manages viewing Lighthouse reports.
  */
@@ -71,6 +35,7 @@ class LighthouseReportViewer {
 
     this._dragAndDropper = new DragAndDrop(this._onFileLoad);
     this._github = new GithubApi();
+    this._psi = new PSIApi();
 
     /**
      * Used for tracking whether to offer to upload as a gist.
@@ -83,8 +48,7 @@ class LighthouseReportViewer {
     const params = new URLSearchParams(location.search);
     const url = params.get('url');
     if (url) {
-      const categoriesCsv = params.get('categories');
-      const categories = categoriesCsv ? categoriesCsv.split(',') : PSI_DEFAULT_CATEGORIES;
+      const categories = params.has('category') ? params.getAll('category') : null;
       this._loadFromPSI(url, categories);
     } else {
       this._addEventListeners();
@@ -423,7 +387,7 @@ class LighthouseReportViewer {
 
   /**
    * @param {string} url
-   * @param {string[]} categories
+   * @param {?string[]} categories
    */
   _loadFromPSI(url, categories) {
     const loadingOverlayEl = document.createElement('div');
@@ -431,10 +395,10 @@ class LighthouseReportViewer {
     loadingOverlayEl.textContent = 'Waiting for Lighthouse results ...';
     find('.viewer-placeholder-inner', document.body).classList.add('lh-loading');
     document.body.appendChild(loadingOverlayEl);
-    callPSI(url, categories).then(psiResponse => {
+    this._psi.callPSI(url, categories).then(response => {
       this._reportIsFromPSI = true;
       loadingOverlayEl.remove();
-      this._replaceReportHtml(psiResponse.lighthouseResult);
+      this._replaceReportHtml(response.lighthouseResult);
     });
   }
 }
