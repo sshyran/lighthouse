@@ -26,24 +26,26 @@ function find(query, context) {
 /** @typedef {{lighthouseResult: LH.Result}} PSIResponse */
 
 const PSI_KEY = 'AIzaSyAjcDRNN9CX9dCazhqI4lGR7yyQbkd_oYE';
+const PSI_DEFAULT_CATEGORIES = [
+  'performance',
+  'accessibility',
+  'seo',
+  'best-practices',
+  'pwa',
+];
 
 /**
  * @param {string} url
+ * @param {string[]} categories
  * @return {Promise<PSIResponse>}
  */
-function callPSI(url) {
+function callPSI(url, categories) {
   const psiUrl = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
   /** @type {Record<string, string | string[]>} */
   const params = {
     key: PSI_KEY,
     url,
-    category: [
-      'performance',
-      'accessibility',
-      'seo',
-      'best-practices',
-      'pwa',
-    ],
+    category: categories,
     strategy: 'mobile',
     utm_source: 'Lighthouse Chrome Extension',
   };
@@ -81,7 +83,9 @@ class LighthouseReportViewer {
     const params = new URLSearchParams(location.search);
     const url = params.get('url');
     if (url) {
-      this._loadFromPSI(url);
+      const categoriesCsv = params.get('categories');
+      const categories = categoriesCsv ? categoriesCsv.split(',') : PSI_DEFAULT_CATEGORIES;
+      this._loadFromPSI(url, categories);
     } else {
       this._addEventListeners();
       this._loadFromDeepLink();
@@ -419,14 +423,15 @@ class LighthouseReportViewer {
 
   /**
    * @param {string} url
+   * @param {string[]} categories
    */
-  _loadFromPSI(url) {
+  _loadFromPSI(url, categories) {
     const loadingOverlayEl = document.createElement('div');
     loadingOverlayEl.classList.add('lh-loading-overlay');
     loadingOverlayEl.textContent = 'Waiting for Lighthouse results ...';
     find('.viewer-placeholder-inner', document.body).classList.add('lh-loading');
     document.body.appendChild(loadingOverlayEl);
-    callPSI(url).then(psiResponse => {
+    callPSI(url, categories).then(psiResponse => {
       this._reportIsFromPSI = true;
       loadingOverlayEl.remove();
       this._replaceReportHtml(psiResponse.lighthouseResult);
