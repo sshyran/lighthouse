@@ -25,7 +25,7 @@ class PSIApi {
    * @param {PSIParams} params
    * @return {Promise<PSIResponse>}
    */
-  callPSI(params) {
+  fetchPSI(params) {
     params = Object.assign({
       key: PSI_KEY,
       strategy: 'mobile',

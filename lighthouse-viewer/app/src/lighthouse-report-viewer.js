@@ -403,7 +403,7 @@ class LighthouseReportViewer {
     loadingOverlayEl.textContent = 'Waiting for Lighthouse results ...';
     find('.viewer-placeholder-inner', document.body).classList.add('lh-loading');
     document.body.appendChild(loadingOverlayEl);
-    this._psi.callPSI(params).then(response => {
+    this._psi.fetchPSI(params).then(response => {
       this._reportIsFromPSI = true;
       loadingOverlayEl.remove();
       this._replaceReportHtml(response.lighthouseResult);
