@@ -29,6 +29,7 @@ function requestHandler(request, response) {
   if (filePath === '/') {
     const fixturePaths = glob.sync('**/*.html', {cwd: __dirname});
     const html = `
+      <html>
       <h1>Smoke test fixtures</h1>
       ${fixturePaths.map(p => `<a href=${p}>${p}</a>`).join('<br>')}
     `;
@@ -90,8 +91,6 @@ function requestHandler(request, response) {
       headers['Content-Type'] = 'image/webp';
     } else if (filePath.endsWith('.json')) {
       headers['Content-Type'] = 'application/json';
-    } else if (filePath.endsWith('.html') || filePath === '/') {
-      headers['Content-Type'] = 'text/html';
     }
 
     let delay = 0;
