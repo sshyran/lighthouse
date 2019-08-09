@@ -12,6 +12,7 @@ const http = require('http');
 const zlib = require('zlib');
 const path = require('path');
 const fs = require('fs');
+const glob = require('glob');
 const parseQueryString = require('querystring').parse;
 const parseURL = require('url').parse;
 const URLSearchParams = require('url').URLSearchParams;
@@ -24,6 +25,16 @@ function requestHandler(request, response) {
   const filePath = requestUrl.pathname;
   const queryString = requestUrl.search && parseQueryString(requestUrl.search.slice(1));
   let absoluteFilePath = path.join(__dirname, filePath);
+
+  if (filePath === '/') {
+    const fixturePaths = glob.sync('**/*.html', {cwd: __dirname});
+    const html = `
+      <h1>Smoke test fixtures</h1>
+      ${fixturePaths.map(p => `<a href=${p}>${p}</a>`).join('<br>')}
+    `;
+    sendResponse(200, html);
+    return;
+  }
 
   if (filePath.startsWith('/dist/viewer')) {
     // Rewrite lighthouse-viewer paths to point to that location.
@@ -79,6 +90,8 @@ function requestHandler(request, response) {
       headers['Content-Type'] = 'image/webp';
     } else if (filePath.endsWith('.json')) {
       headers['Content-Type'] = 'application/json';
+    } else if (filePath.endsWith('.html') || filePath === '/') {
+      headers['Content-Type'] = 'text/html';
     }
 
     let delay = 0;
@@ -150,12 +163,15 @@ const serverForOffline = http.createServer(requestHandler);
 serverForOnline.on('error', e => console.error(e.code, e));
 serverForOffline.on('error', e => console.error(e.code, e));
 
-
 // If called via `node static-server.js` then start listening, otherwise, just expose the servers
 if (require.main === module) {
   // Start listening
-  serverForOnline.listen(10200, 'localhost');
-  serverForOffline.listen(10503, 'localhost');
+  const onlinePort = 10200;
+  const offlinePort = 10503;
+  serverForOnline.listen(onlinePort, 'localhost');
+  serverForOffline.listen(offlinePort, 'localhost');
+  console.log(`online:  listening on http://localhost:${onlinePort}`);
+  console.log(`offline: listening on http://localhost:${offlinePort}`);
 } else {
   module.exports = {
     server: serverForOnline,
